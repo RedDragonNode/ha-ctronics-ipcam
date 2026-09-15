@@ -65,6 +65,8 @@ class CtronicsClient:
         self._session = session
         self._host = host
         self._port = port
+        self._username = username
+        self._password = password
         self._auth = aiohttp.BasicAuth(username, password)
         self._base_url = f"http://{host}:{port}{CGI_PARAM_PATH}"
         self._ptz_url = f"http://{host}:{port}{CGI_PTZCTRL_PATH}"
@@ -246,6 +248,18 @@ class CtronicsClient:
         return await self.execute_set(
             "setircutattr", {"-saradc_switch_value": str(value)}
         )
+
+    # ── RTSP ─────────────────────────────────────────────────────────
+
+    def rtsp_url(self, path: str, port: int) -> str:
+        """Build the RTSP URL for one of the camera's streams.
+
+        Credentials are percent-encoded, because a camera password may well
+        contain ``@`` or ``:`` and would otherwise break the URL.
+        """
+        user = quote(self._username, safe="")
+        secret = quote(self._password, safe="")
+        return f"rtsp://{user}:{secret}@{self._host}:{port}/{path.lstrip('/')}"
 
     # ── Still-image snapshots ────────────────────────────────────────
 

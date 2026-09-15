@@ -25,10 +25,14 @@
       "init": {
         "data": {
           "preset_count": "Anzahl PTZ-Preset-Buttons (max. 8)",
-          "snapshot_folder": "Speicherort für Schnappschüsse"
+          "snapshot_folder": "Speicherort für Schnappschüsse",
+          "rtsp_port": "RTSP-Port",
+          "rtsp_main_path": "RTSP-Pfad Hauptstream",
+          "rtsp_sub_path": "RTSP-Pfad Zweitstream"
         },
         "data_description": {
-          "snapshot_folder": "Ordner, in den der Button „Schnappschuss speichern“ schreibt. Unterhalb von /media lassen sich die Bilder direkt im Medien-Bereich von Home Assistant ansehen und herunterladen."
+          "snapshot_folder": "Ordner, in den der Button „Schnappschuss speichern“ schreibt. Unterhalb von /media lassen sich die Bilder direkt im Medien-Bereich von Home Assistant ansehen und herunterladen.",
+          "rtsp_main_path": "Nur ändern, wenn der Stream schwarz bleibt. Die Adresse lautet rtsp://<IP>:<Port>/<Pfad> — probier sie zum Prüfen in VLC aus."
         }
       }
     }
@@ -71,6 +75,12 @@
     "camera": {
       "snapshot": {
         "name": "Schnappschuss"
+      },
+      "main_stream": {
+        "name": "Hauptstream"
+      },
+      "sub_stream": {
+        "name": "Zweitstream"
       }
     }
   }

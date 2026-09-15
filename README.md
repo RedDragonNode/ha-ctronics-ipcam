@@ -21,7 +21,7 @@ feature set:
 
 | | ONVIF | This integration |
 |---|---|---|
-| Live video stream | ✅ | — (use ONVIF) |
+| Live video stream | ✅ | ✅ (same streams, on one device) |
 | Generic motion detection | ✅ | — (use ONVIF) |
 | AI person detection on/off | ❌ | ✅ |
 | Detection threshold | ❌ | ✅ |
@@ -44,6 +44,8 @@ own settings.
 | IR LED control | `select` | `Auto` / `On` / `Off` for the infrared LEDs |
 | IRCut switching time | `number` (1–1024) | How long the IR-cut filter waits before switching |
 | Go to preset _n_ | `button` | Drives the camera to a stored PTZ preset |
+| Main stream | `camera` | The camera's full-resolution RTSP stream |
+| Second stream | `camera` | The lower-resolution RTSP stream |
 | Snapshot | `camera` | Full-resolution still straight from the camera, no stream needed |
 | Save snapshot | `button` | Grabs a fresh still and writes it to disk |
 
@@ -71,7 +73,8 @@ interface. Give the camera a **static IP / DHCP reservation** — the
 integration addresses it by IP.
 
 After setup, the entry's **Configure** dialog holds the rest: how many PTZ
-preset buttons to create (0–8), and where the *Save snapshot* button writes to.
+preset buttons to create (0–8), where the *Save snapshot* button writes to, and the RTSP port and stream
+paths.
 
 ### Presets
 
@@ -84,6 +87,28 @@ move the camera, pick a preset number, press *Senden*). Preset numbering in
 the camera's UI starts at 1; the API counts from 0, and this integration
 handles that mapping for you — "Go to preset 1" drives to the camera's
 preset 1.
+
+### Streams
+
+The two RTSP streams are also exposed by Home Assistant's ONVIF integration.
+Having them here too means the whole camera — streams, snapshot, presets and
+settings — sits on one device instead of two. Pick whichever you prefer;
+running both costs the camera two connections only while something is
+actually watching.
+
+The stream addresses are **not** read from the camera: ONVIF hands Home
+Assistant its URLs directly, so there was nothing to read them off, and the
+defaults below are the ones Ctronics documents.
+
+```
+rtsp://<user>:<pass>@<camera-ip>:554/11   # main stream
+rtsp://<user>:<pass>@<camera-ip>:554/12   # second stream
+```
+
+If a stream stays black, check the real address (open it in VLC) and correct
+the port/path in the entry's **Configure** dialog — no new release needed.
+Both stream entities use the HTTP still below as their preview image, which
+is sharper and cheaper than decoding an RTSP keyframe.
 
 ### Snapshots
 

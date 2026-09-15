@@ -13,9 +13,15 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import CtronicsApiError, CtronicsAuthError, CtronicsClient
 from .const import (
     CONF_PRESET_COUNT,
+    CONF_RTSP_MAIN_PATH,
+    CONF_RTSP_PORT,
+    CONF_RTSP_SUB_PATH,
     CONF_SNAPSHOT_FOLDER,
     DEFAULT_PORT,
     DEFAULT_PRESET_COUNT,
+    DEFAULT_RTSP_MAIN_PATH,
+    DEFAULT_RTSP_PORT,
+    DEFAULT_RTSP_SUB_PATH,
     DEFAULT_SNAPSHOT_FOLDER,
     DOMAIN,
     MAX_PRESET_COUNT,
@@ -70,6 +76,9 @@ class CtronicsConfigFlow(ConfigFlow, domain=DOMAIN):
                     options={
                         CONF_PRESET_COUNT: DEFAULT_PRESET_COUNT,
                         CONF_SNAPSHOT_FOLDER: DEFAULT_SNAPSHOT_FOLDER,
+                        CONF_RTSP_PORT: DEFAULT_RTSP_PORT,
+                        CONF_RTSP_MAIN_PATH: DEFAULT_RTSP_MAIN_PATH,
+                        CONF_RTSP_SUB_PATH: DEFAULT_RTSP_SUB_PATH,
                     },
                 )
 
@@ -84,7 +93,7 @@ class CtronicsConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class CtronicsOptionsFlow(OptionsFlow):
-    """Preset button count and where snapshots are saved."""
+    """Preset buttons, snapshot location and the RTSP stream addresses."""
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         self._config_entry = config_entry
@@ -94,6 +103,14 @@ class CtronicsOptionsFlow(OptionsFlow):
             user_input[CONF_SNAPSHOT_FOLDER] = (
                 user_input.get(CONF_SNAPSHOT_FOLDER) or DEFAULT_SNAPSHOT_FOLDER
             ).strip() or DEFAULT_SNAPSHOT_FOLDER
+            # A blank stream path would build rtsp://host:554/ and fail with
+            # an unhelpful error, so fall back to the documented default.
+            user_input[CONF_RTSP_MAIN_PATH] = (
+                user_input.get(CONF_RTSP_MAIN_PATH) or ""
+            ).strip().lstrip("/") or DEFAULT_RTSP_MAIN_PATH
+            user_input[CONF_RTSP_SUB_PATH] = (
+                user_input.get(CONF_RTSP_SUB_PATH) or ""
+            ).strip().lstrip("/") or DEFAULT_RTSP_SUB_PATH
             return self.async_create_entry(data=user_input)
 
         options = self._config_entry.options
@@ -110,6 +127,20 @@ class CtronicsOptionsFlow(OptionsFlow):
                     default=options.get(
                         CONF_SNAPSHOT_FOLDER, DEFAULT_SNAPSHOT_FOLDER
                     ),
+                ): str,
+                vol.Optional(
+                    CONF_RTSP_PORT,
+                    default=options.get(CONF_RTSP_PORT, DEFAULT_RTSP_PORT),
+                ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
+                vol.Optional(
+                    CONF_RTSP_MAIN_PATH,
+                    default=options.get(
+                        CONF_RTSP_MAIN_PATH, DEFAULT_RTSP_MAIN_PATH
+                    ),
+                ): str,
+                vol.Optional(
+                    CONF_RTSP_SUB_PATH,
+                    default=options.get(CONF_RTSP_SUB_PATH, DEFAULT_RTSP_SUB_PATH),
                 ): str,
             }
         )

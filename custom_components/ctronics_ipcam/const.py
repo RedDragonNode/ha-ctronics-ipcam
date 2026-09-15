@@ -13,6 +13,9 @@ PLATFORMS = ["switch", "number", "button", "select", "camera"]
 # ── Config / options keys ───────────────────────────────────────────────
 CONF_PRESET_COUNT = "preset_count"
 CONF_SNAPSHOT_FOLDER = "snapshot_folder"
+CONF_RTSP_PORT = "rtsp_port"
+CONF_RTSP_MAIN_PATH = "rtsp_main_path"
+CONF_RTSP_SUB_PATH = "rtsp_sub_path"
 
 DEFAULT_PORT = 80
 DEFAULT_PRESET_COUNT = 4
@@ -41,6 +44,18 @@ SNAPSHOT_TIMEOUT = 30
 # camera is a small embedded device; polling it harder than this gains
 # nothing because auto.jpg doesn't refresh faster anyway.
 SNAPSHOT_FRAME_INTERVAL = 2.0
+
+# ── RTSP streams ────────────────────────────────────────────────────────
+# NOT captured from this camera — these are the paths Ctronics documents for
+# its cameras and the ones the Hi3510 family commonly uses. The camera's
+# ONVIF service hands Home Assistant its stream URLs directly, so there was
+# nothing to read them off. They are therefore exposed as options: if a
+# stream stays black, check the real address (e.g. open
+# rtsp://<ip>:554/11 in VLC) and correct the path here rather than waiting
+# for a new release.
+DEFAULT_RTSP_PORT = 554
+DEFAULT_RTSP_MAIN_PATH = "11"  # main stream, full resolution
+DEFAULT_RTSP_SUB_PATH = "12"  # second stream, lower resolution
 
 # Where the "save snapshot" button writes to. /media is browsable in Home
 # Assistant's own Medien panel, so saved images can be viewed and downloaded

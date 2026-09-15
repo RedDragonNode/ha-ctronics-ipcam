@@ -25,10 +25,14 @@
       "init": {
         "data": {
           "preset_count": "Number of PTZ preset buttons (max. 8)",
-          "snapshot_folder": "Snapshot save location"
+          "snapshot_folder": "Snapshot save location",
+          "rtsp_port": "RTSP port",
+          "rtsp_main_path": "RTSP path, main stream",
+          "rtsp_sub_path": "RTSP path, second stream"
         },
         "data_description": {
-          "snapshot_folder": "Folder the \"Save snapshot\" button writes to. Anywhere under /media can be viewed and downloaded straight from Home Assistant's Media panel."
+          "snapshot_folder": "Folder the \"Save snapshot\" button writes to. Anywhere under /media can be viewed and downloaded straight from Home Assistant's Media panel.",
+          "rtsp_main_path": "Only change this if a stream stays black. The address is rtsp://<ip>:<port>/<path> — try it in VLC to check."
         }
       }
     }
@@ -71,6 +75,12 @@
     "camera": {
       "snapshot": {
         "name": "Snapshot"
+      },
+      "main_stream": {
+        "name": "Main stream"
+      },
+      "sub_stream": {
+        "name": "Second stream"
       }
     }
   }

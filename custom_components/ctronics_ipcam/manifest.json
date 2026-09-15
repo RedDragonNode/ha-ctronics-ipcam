@@ -5,9 +5,12 @@
     "@RedDragonNode"
   ],
   "config_flow": true,
+  "dependencies": [
+    "stream"
+  ],
   "documentation": "https://github.com/RedDragonNode/ha-ctronics-ipcam",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/RedDragonNode/ha-ctronics-ipcam/issues",
   "requirements": [],
-  "version": "0.6.0"
+  "version": "0.7.0"
 }
