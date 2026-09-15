@@ -21,14 +21,16 @@ feature set:
 
 | | ONVIF | This integration |
 |---|---|---|
-| Video stream, snapshots | ✅ | — (use ONVIF) |
+| Live video stream | ✅ | — (use ONVIF) |
 | Generic motion detection | ✅ | — (use ONVIF) |
 | AI person detection on/off | ❌ | ✅ |
+| "Person detected" sensor | ❌ | ✅ |
 | Detection threshold | ❌ | ✅ |
 | Auto-tracking (Smart Track) | ❌ | ✅ |
 | IR LED mode (auto/on/off) | ❌ | ✅ |
 | IRCut switching time | ❌ | ✅ |
 | PTZ preset buttons | partly | ✅ |
+| Full-resolution still snapshot | partly | ✅ |
 
 Run both side by side: ONVIF for the picture, this one for the camera's
 own settings.
@@ -43,6 +45,10 @@ own settings.
 | IR LED control | `select` | `Auto` / `On` / `Off` for the infrared LEDs |
 | IRCut switching time | `number` (1–1024) | How long the IR-cut filter waits before switching |
 | Go to preset _n_ | `button` | Drives the camera to a stored PTZ preset |
+| Person detected | `binary_sensor` | On while the camera's AI reports a person (see *Person detection* below) |
+| Last detection | `image` | The snapshot the camera sent with the last alarm |
+| Snapshot | `camera` | Full-resolution still straight from the camera, no stream needed |
+| Save snapshot | `button` | Grabs a fresh still and writes it to disk |
 
 All labels are translated (English and German included).
 
@@ -67,8 +73,10 @@ You need the camera's IP address and the admin login you use for its web
 interface. Give the camera a **static IP / DHCP reservation** — the
 integration addresses it by IP.
 
-After setup, the entry's **Configure** dialog lets you choose how many PTZ
-preset buttons to create (0–8).
+After setup, the entry's **Configure** dialog holds the rest: how many PTZ
+preset buttons to create (0–8), the alarm folder for person detection, how
+long that sensor stays on, the alarm file-name prefix, and where the
+*Save snapshot* button writes to.
 
 ### Presets
 
@@ -82,18 +90,52 @@ the camera's UI starts at 1; the API counts from 0, and this integration
 handles that mapping for you — "Go to preset 1" drives to the camera's
 preset 1.
 
+### Snapshots
+
+Besides the RTSP stream, the camera serves a still image of the full 3840x2160
+sensor frame over plain HTTP — no stream has to be running, so it costs the
+camera far less than pulling a frame out of RTSP:
+
+```
+http://<camera-ip>/tmpfs/auto.jpg   # refreshed by the camera itself
+http://<camera-ip>/tmpfs/snap.jpg   # grabs a frame now
+```
+
+The `camera` entity polls `auto.jpg` (at most every 2 s), the *Save snapshot*
+button asks for a fresh `snap.jpg` and falls back to `auto.jpg` if a firmware
+lacks it. Saved files are named `<entry>_<YYYY-MM-DD>_<HH-MM-SS>.jpg` and go
+to `/media/ctronics` by default, which Home Assistant's own **Media** panel
+browses — so they can be viewed and downloaded from the UI with no
+`allowlist_external_dirs` entry. Every save also fires a
+`ctronics_ipcam_snapshot_saved` event carrying the path, to hook automations
+onto.
+
+### Person detection
+
+The camera has no webhook and nothing pollable that says "a person is in
+frame". Its only real-time signal is the snapshot it FTPs when its AI fires,
+so the integration watches the folder those land in. Point the camera's FTP
+upload at a folder Home Assistant can read, enter that folder in the options,
+and the `binary_sensor` follows it.
+
+The camera creates `<folder>/<YYYY-MM-DD>/images/` underneath, which is
+searched automatically, and it drops three kinds of file in there, told apart
+by the first letter: `A…` alarm, `P…` periodic auto-snapshot (once a minute),
+`T…` FTP test upload. Only the configured prefix (default `A`) counts as a
+detection, and only those files are ever deleted — nothing else in the folder
+is touched. Note that the periodic `P…` uploads are never cleaned up by this
+integration and will fill the disk if you leave them enabled on the camera.
+
 ## Known limitations
 
-- **No "person detected" sensor.** The camera can only push an alarm via
-  FTP, e-mail or SD card — there is no webhook and nothing to poll. A working
-  workaround is to let the camera FTP its alarm snapshots to Home Assistant
-  and watch that folder; folding this into the integration is the next
-  planned step.
 - The IRCut value's *read* command is guessed (`getircutattr`). If your
   firmware doesn't have it, the integration notices, stops asking, and simply
   keeps the last value you set. Writing works either way.
 - Image settings (brightness, contrast, flip, …) are understood but not yet
   exposed.
+- PTZ direction control is not exposed yet: only `-act=stop` and `-act=up`
+  have been confirmed on the device, and the remaining values have not been
+  verified.
 
 ## The camera's local API
 
@@ -120,6 +162,14 @@ HTTP Basic Auth with the camera's admin credentials. Reads answer with
 | PTZ motor settings | `getmotorattr` | `setmotorattr&-tiltscan=&-tiltspeed=&-panscan=&-panspeed=&-movehome=&-ptzalarmmask=` |
 | Image settings | `getimageattr` | `setimageattr&-brightness=&-contrast=&-saturation=&-sharpness=&-mirror=&-flip=&…` |
 | Go to preset | — | `preset&-act=goto&-status=1&-number=<0-7>` |
+| PTZ move | — | `ptzctrl.cgi?-step=0&-act=<up\|stop\|…>&-speed=<n>` |
+
+Outside the CGI, two plain HTTP still-image endpoints (both full 3840x2160):
+
+| Purpose | URL |
+|---|---|
+| Self-refreshing still | `/tmpfs/auto.jpg` |
+| Capture a frame now | `/tmpfs/snap.jpg` |
 
 Two things that cost real debugging time:
 

@@ -31,11 +31,13 @@
           "preset_count": "Number of PTZ preset buttons (max. 8)",
           "alarm_folder": "Alarm folder",
           "off_delay": "Keep detection on for (seconds)",
-          "alarm_prefix": "Alarm file name starts with"
+          "alarm_prefix": "Alarm file name starts with",
+          "snapshot_folder": "Snapshot save location"
         },
         "data_description": {
           "alarm_folder": "The folder you set in the camera under FTP → path. Subfolders the camera creates inside it are searched automatically.",
-          "alarm_prefix": "The camera uploads alarm images (A...), periodic snapshots (P...) and test images (T...) to the same folder. Only files starting with this letter count as a detection and get cleaned up. Empty = every image."
+          "alarm_prefix": "The camera uploads alarm images (A...), periodic snapshots (P...) and test images (T...) to the same folder. Only files starting with this letter count as a detection and get cleaned up. Empty = every image.",
+          "snapshot_folder": "Folder the \"Save snapshot\" button writes to. Anywhere under /media can be viewed and downloaded straight from Home Assistant's Media panel."
         }
       }
     }
@@ -70,6 +72,14 @@
     "button": {
       "preset": {
         "name": "Go to preset {number}"
+      },
+      "save_snapshot": {
+        "name": "Save snapshot"
+      }
+    },
+    "camera": {
+      "snapshot": {
+        "name": "Snapshot"
       }
     },
     "binary_sensor": {

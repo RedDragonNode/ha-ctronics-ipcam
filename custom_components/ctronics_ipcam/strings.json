@@ -31,11 +31,13 @@
           "preset_count": "Anzahl PTZ-Preset-Buttons (max. 8)",
           "alarm_folder": "Alarm-Ordner",
           "off_delay": "Erkennung bleibt aktiv für (Sekunden)",
-          "alarm_prefix": "Dateiname-Anfang der Alarmbilder"
+          "alarm_prefix": "Dateiname-Anfang der Alarmbilder",
+          "snapshot_folder": "Speicherort für Schnappschüsse"
         },
         "data_description": {
           "alarm_folder": "Der Ordner, den du in der Kamera unter FTP → Pfad eingetragen hast. Unterordner, die die Kamera darin anlegt, werden automatisch mit durchsucht.",
-          "alarm_prefix": "Die Kamera lädt Alarmbilder (A...), Auto-Schnappschüsse (P...) und Testbilder (T...) in denselben Ordner. Nur Dateien mit diesem Anfangsbuchstaben gelten als Erkennung und werden aufgeräumt. Leer = alle Bilder."
+          "alarm_prefix": "Die Kamera lädt Alarmbilder (A...), Auto-Schnappschüsse (P...) und Testbilder (T...) in denselben Ordner. Nur Dateien mit diesem Anfangsbuchstaben gelten als Erkennung und werden aufgeräumt. Leer = alle Bilder.",
+          "snapshot_folder": "Ordner, in den der Button „Schnappschuss speichern“ schreibt. Unterhalb von /media lassen sich die Bilder direkt im Medien-Bereich von Home Assistant ansehen und herunterladen."
         }
       }
     }
@@ -70,6 +72,14 @@
     "button": {
       "preset": {
         "name": "Preset {number} anfahren"
+      },
+      "save_snapshot": {
+        "name": "Schnappschuss speichern"
+      }
+    },
+    "camera": {
+      "snapshot": {
+        "name": "Schnappschuss"
       }
     },
     "binary_sensor": {

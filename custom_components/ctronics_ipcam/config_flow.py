@@ -15,11 +15,13 @@ from .const import (
     CONF_ALARM_FOLDER,
     CONF_ALARM_PREFIX,
     CONF_OFF_DELAY,
+    CONF_SNAPSHOT_FOLDER,
     DEFAULT_ALARM_PREFIX,
     CONF_PRESET_COUNT,
     DEFAULT_OFF_DELAY,
     DEFAULT_PORT,
     DEFAULT_PRESET_COUNT,
+    DEFAULT_SNAPSHOT_FOLDER,
     DOMAIN,
     MAX_PRESET_COUNT,
 )
@@ -82,6 +84,7 @@ class CtronicsConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_ALARM_FOLDER: alarm_folder,
                         CONF_OFF_DELAY: DEFAULT_OFF_DELAY,
                         CONF_ALARM_PREFIX: DEFAULT_ALARM_PREFIX,
+                        CONF_SNAPSHOT_FOLDER: DEFAULT_SNAPSHOT_FOLDER,
                     },
                 )
 
@@ -106,6 +109,9 @@ class CtronicsOptionsFlow(OptionsFlow):
             user_input[CONF_ALARM_FOLDER] = (
                 user_input.get(CONF_ALARM_FOLDER) or ""
             ).strip()
+            user_input[CONF_SNAPSHOT_FOLDER] = (
+                user_input.get(CONF_SNAPSHOT_FOLDER) or DEFAULT_SNAPSHOT_FOLDER
+            ).strip() or DEFAULT_SNAPSHOT_FOLDER
             return self.async_create_entry(data=user_input)
 
         options = self._config_entry.options
@@ -128,6 +134,12 @@ class CtronicsOptionsFlow(OptionsFlow):
                 vol.Optional(
                     CONF_ALARM_PREFIX,
                     default=options.get(CONF_ALARM_PREFIX, DEFAULT_ALARM_PREFIX),
+                ): str,
+                vol.Optional(
+                    CONF_SNAPSHOT_FOLDER,
+                    default=options.get(
+                        CONF_SNAPSHOT_FOLDER, DEFAULT_SNAPSHOT_FOLDER
+                    ),
                 ): str,
             }
         )

@@ -22,7 +22,13 @@ from urllib.parse import quote
 
 import aiohttp
 
-from .const import CGI_PARAM_PATH, CGI_PTZCTRL_PATH
+from .const import (
+    CGI_PARAM_PATH,
+    CGI_PTZCTRL_PATH,
+    SNAPSHOT_PATH_CACHED,
+    SNAPSHOT_PATH_FRESH,
+    SNAPSHOT_TIMEOUT,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,6 +69,8 @@ class CtronicsClient:
         self._base_url = f"http://{host}:{port}{CGI_PARAM_PATH}"
         self._ptz_url = f"http://{host}:{port}{CGI_PTZCTRL_PATH}"
         self._timeout = aiohttp.ClientTimeout(total=10)
+        # A 4K still is far bigger than a CGI reply, so it gets its own budget.
+        self._image_timeout = aiohttp.ClientTimeout(total=SNAPSHOT_TIMEOUT)
         # Set to False once a command turns out not to exist on this firmware,
         # so we stop re-requesting a known 404 on every refresh.
         self._ircut_supported: bool | None = None
@@ -237,6 +245,60 @@ class CtronicsClient:
         # Confirmed live capture: cmd=setircutattr&-saradc_switch_value=80
         return await self.execute_set(
             "setircutattr", {"-saradc_switch_value": str(value)}
+        )
+
+    # ── Still-image snapshots ────────────────────────────────────────
+
+    async def get_snapshot(self, fresh: bool = False) -> bytes:
+        """Fetch a still JPEG straight from the camera.
+
+        Confirmed live 2026-09-15 against this camera: both ``/tmpfs/auto.jpg``
+        and ``/tmpfs/snap.jpg`` return a full 3840x2160 JPEG. This is not a
+        CGI call and not the ONVIF/RTSP stream — it is the camera's own
+        still-image endpoint, so it works even while nothing is streaming.
+
+        ``fresh=True`` asks the camera to grab a frame now (snap.jpg) and
+        falls back to the self-refreshing auto.jpg if a firmware ever drops
+        it. The response is checked for a real JPEG header, because this
+        camera answers some unknown paths with an HTML error page and
+        HTTP 200 rather than a 404.
+        """
+        paths = (
+            (SNAPSHOT_PATH_FRESH, SNAPSHOT_PATH_CACHED)
+            if fresh
+            else (SNAPSHOT_PATH_CACHED,)
+        )
+        last_error: Exception | None = None
+
+        for path in paths:
+            url = f"http://{self._host}:{self._port}{path}"
+            try:
+                async with self._session.get(
+                    url,
+                    auth=self._auth,
+                    timeout=self._image_timeout,
+                    headers=self._extra_headers,
+                ) as resp:
+                    if resp.status == 401:
+                        raise CtronicsAuthError("HTTP 401 Unauthorized")
+                    resp.raise_for_status()
+                    data = await resp.read()
+            except CtronicsAuthError:
+                raise
+            except (aiohttp.ClientError, TimeoutError) as err:
+                last_error = err
+                _LOGGER.debug("Snapshot %s failed: %s", path, err)
+                continue
+
+            if not data.startswith(b"\xff\xd8"):
+                last_error = CtronicsCommandError(f"{path} did not return a JPEG")
+                _LOGGER.debug("Snapshot %s returned %d non-JPEG bytes", path, len(data))
+                continue
+
+            return data
+
+        raise CtronicsConnectionError(
+            f"No snapshot from {self._host}: {last_error}"
         )
 
     # ── PTZ presets ──────────────────────────────────────────────────
