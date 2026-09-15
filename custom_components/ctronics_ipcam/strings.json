@@ -1,0 +1,65 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Ctronics IP-Kamera verbinden",
+        "data": {
+          "host": "IP-Adresse",
+          "username": "Benutzername",
+          "password": "Passwort",
+          "port": "Port"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Benutzername oder Passwort falsch",
+      "cannot_connect": "Kamera nicht erreichbar",
+      "unknown": "Unerwarteter Fehler"
+    },
+    "abort": {
+      "already_configured": "Diese Kamera ist bereits eingerichtet"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "preset_count": "Anzahl PTZ-Preset-Buttons (max. 8)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "switch": {
+      "ai_detection": {
+        "name": "KI-Personenerkennung"
+      },
+      "auto_tracking": {
+        "name": "Auto-Tracking"
+      }
+    },
+    "number": {
+      "detection_threshold": {
+        "name": "Erkennungsschwelle"
+      },
+      "ircut_value": {
+        "name": "IRCut-Schaltzeit"
+      }
+    },
+    "select": {
+      "ir_mode": {
+        "name": "IR-LED-Steuerung",
+        "state": {
+          "auto": "Auto",
+          "open": "Ein",
+          "close": "Aus"
+        }
+      }
+    },
+    "button": {
+      "preset": {
+        "name": "Preset {number} anfahren"
+      }
+    }
+  }
+}

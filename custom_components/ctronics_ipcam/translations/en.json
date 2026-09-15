@@ -1,0 +1,65 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect Ctronics IP Camera",
+        "data": {
+          "host": "IP address",
+          "username": "Username",
+          "password": "Password",
+          "port": "Port"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid username or password",
+      "cannot_connect": "Unable to reach the camera",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This camera is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "preset_count": "Number of PTZ preset buttons (max. 8)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "switch": {
+      "ai_detection": {
+        "name": "AI person detection"
+      },
+      "auto_tracking": {
+        "name": "Auto-tracking"
+      }
+    },
+    "number": {
+      "detection_threshold": {
+        "name": "Detection threshold"
+      },
+      "ircut_value": {
+        "name": "IRCut switching time"
+      }
+    },
+    "select": {
+      "ir_mode": {
+        "name": "IR LED control",
+        "state": {
+          "auto": "Auto",
+          "open": "On",
+          "close": "Off"
+        }
+      }
+    },
+    "button": {
+      "preset": {
+        "name": "Go to preset {number}"
+      }
+    }
+  }
+}
