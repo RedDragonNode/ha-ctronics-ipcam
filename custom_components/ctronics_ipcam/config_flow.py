@@ -13,7 +13,9 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import CtronicsApiError, CtronicsAuthError, CtronicsClient
 from .const import (
     CONF_ALARM_FOLDER,
+    CONF_ALARM_PREFIX,
     CONF_OFF_DELAY,
+    DEFAULT_ALARM_PREFIX,
     CONF_PRESET_COUNT,
     DEFAULT_OFF_DELAY,
     DEFAULT_PORT,
@@ -79,6 +81,7 @@ class CtronicsConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_PRESET_COUNT: DEFAULT_PRESET_COUNT,
                         CONF_ALARM_FOLDER: alarm_folder,
                         CONF_OFF_DELAY: DEFAULT_OFF_DELAY,
+                        CONF_ALARM_PREFIX: DEFAULT_ALARM_PREFIX,
                     },
                 )
 
@@ -122,6 +125,10 @@ class CtronicsOptionsFlow(OptionsFlow):
                     CONF_OFF_DELAY,
                     default=options.get(CONF_OFF_DELAY, DEFAULT_OFF_DELAY),
                 ): vol.All(vol.Coerce(int), vol.Range(min=5, max=600)),
+                vol.Optional(
+                    CONF_ALARM_PREFIX,
+                    default=options.get(CONF_ALARM_PREFIX, DEFAULT_ALARM_PREFIX),
+                ): str,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

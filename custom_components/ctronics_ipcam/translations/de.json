@@ -30,7 +30,12 @@
         "data": {
           "preset_count": "Anzahl PTZ-Preset-Buttons (max. 8)",
           "alarm_folder": "Alarm-Ordner",
-          "off_delay": "Erkennung bleibt aktiv für (Sekunden)"
+          "off_delay": "Erkennung bleibt aktiv für (Sekunden)",
+          "alarm_prefix": "Dateiname-Anfang der Alarmbilder"
+        },
+        "data_description": {
+          "alarm_folder": "Der Ordner, den du in der Kamera unter FTP → Pfad eingetragen hast. Unterordner, die die Kamera darin anlegt, werden automatisch mit durchsucht.",
+          "alarm_prefix": "Die Kamera lädt Alarmbilder (A...), Auto-Schnappschüsse (P...) und Testbilder (T...) in denselben Ordner. Nur Dateien mit diesem Anfangsbuchstaben gelten als Erkennung und werden aufgeräumt. Leer = alle Bilder."
         }
       }
     }

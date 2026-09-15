@@ -10,7 +10,9 @@ from .alarm_watcher import AlarmFolderWatcher
 from .api import CtronicsClient
 from .const import (
     CONF_ALARM_FOLDER,
+    CONF_ALARM_PREFIX,
     CONF_OFF_DELAY,
+    DEFAULT_ALARM_PREFIX,
     DEFAULT_OFF_DELAY,
     DEFAULT_PORT,
     DOMAIN,
@@ -42,6 +44,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass,
             folder=alarm_folder,
             off_delay=entry.options.get(CONF_OFF_DELAY, DEFAULT_OFF_DELAY),
+            alarm_prefix=entry.options.get(CONF_ALARM_PREFIX, DEFAULT_ALARM_PREFIX),
         )
         await runtime.watcher.async_start()
 

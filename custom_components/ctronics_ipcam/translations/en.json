@@ -30,7 +30,12 @@
         "data": {
           "preset_count": "Number of PTZ preset buttons (max. 8)",
           "alarm_folder": "Alarm folder",
-          "off_delay": "Keep detection on for (seconds)"
+          "off_delay": "Keep detection on for (seconds)",
+          "alarm_prefix": "Alarm file name starts with"
+        },
+        "data_description": {
+          "alarm_folder": "The folder you set in the camera under FTP → path. Subfolders the camera creates inside it are searched automatically.",
+          "alarm_prefix": "The camera uploads alarm images (A...), periodic snapshots (P...) and test images (T...) to the same folder. Only files starting with this letter count as a detection and get cleaned up. Empty = every image."
         }
       }
     }

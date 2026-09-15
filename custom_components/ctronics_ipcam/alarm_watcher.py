@@ -33,10 +33,17 @@ _LOGGER = logging.getLogger(__name__)
 class AlarmFolderWatcher:
     """Turns "a new image appeared" into a detection event entities can use."""
 
-    def __init__(self, hass: HomeAssistant, folder: str, off_delay: int) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        folder: str,
+        off_delay: int,
+        alarm_prefix: str = "",
+    ) -> None:
         self.hass = hass
         self.folder = Path(folder)
         self.off_delay = off_delay
+        self.alarm_prefix = alarm_prefix
 
         self.detected = False
         self.latest_file: Path | None = None
@@ -144,17 +151,32 @@ class AlarmFolderWatcher:
         except OSError as err:
             _LOGGER.warning("Cannot create %s: %s", self.folder, err)
 
+    def _matches(self, name: str) -> bool:
+        """Is this one of the camera's alarm snapshots?
+
+        The camera puts alarm images, its once-a-minute "Auto-Schnappschuss"
+        and FTP test uploads into the same folder, distinguished only by the
+        first letter of the file name (A / P / T). Without this filter the
+        sensor would fire every minute regardless of what the camera saw.
+        """
+        if not name.lower().endswith(IMAGE_SUFFIXES):
+            return False
+        return name.startswith(self.alarm_prefix) if self.alarm_prefix else True
+
     def _scan(self) -> list[tuple[float, Path]]:
-        """All image files in the folder, oldest first."""
+        """All matching alarm images, oldest first.
+
+        Searched recursively: the camera creates <folder>/<date>/images/
+        underneath the configured path rather than uploading into it directly.
+        """
         found: list[tuple[float, Path]] = []
-        with os.scandir(self.folder) as entries:
-            for entry in entries:
-                if not entry.is_file():
+        for dirpath, _dirnames, filenames in os.walk(self.folder):
+            for name in filenames:
+                if not self._matches(name):
                     continue
-                if not entry.name.lower().endswith(IMAGE_SUFFIXES):
-                    continue
+                path = Path(dirpath) / name
                 try:
-                    found.append((entry.stat().st_mtime, Path(entry.path)))
+                    found.append((path.stat().st_mtime, path))
                 except OSError:
                     continue
         found.sort()
@@ -168,11 +190,15 @@ class AlarmFolderWatcher:
         return files[-1][0] if files else 0.0
 
     def _cleanup(self, keep: Path) -> None:
-        """Delete every snapshot except the newest one.
+        """Delete every alarm snapshot except the newest one.
 
-        Files touched in the last few seconds are left alone — they may still
-        be uploading, and deleting a half-written file mid-transfer would only
-        confuse the camera's FTP client.
+        Only files this integration recognises as alarm images are ever
+        touched — the camera's periodic snapshots and anything else the user
+        keeps in that folder are left alone.
+
+        Files touched in the last few seconds are also left alone: they may
+        still be uploading, and deleting a half-written file mid-transfer
+        would only confuse the camera's FTP client.
         """
         cutoff = time.time() - DELETE_GRACE_SECONDS
         try:
@@ -186,3 +212,15 @@ class AlarmFolderWatcher:
                 path.unlink()
             except OSError as err:
                 _LOGGER.debug("Cannot delete %s: %s", path, err)
+        self._prune_empty_dirs()
+
+    def _prune_empty_dirs(self) -> None:
+        """Remove the per-date folders the camera leaves behind once empty."""
+        for dirpath, _dirnames, _filenames in os.walk(self.folder, topdown=False):
+            path = Path(dirpath)
+            if path == self.folder:
+                continue
+            try:
+                path.rmdir()  # only succeeds if it is actually empty
+            except OSError:
+                pass
