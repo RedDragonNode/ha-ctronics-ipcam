@@ -7,7 +7,11 @@
           "host": "IP address",
           "username": "Username",
           "password": "Password",
-          "port": "Port"
+          "port": "Port",
+          "alarm_folder": "Alarm folder (optional)"
+        },
+        "data_description": {
+          "alarm_folder": "Folder this camera uploads its alarm snapshots to over FTP, e.g. /share/ctronics_hallway. Leave empty to skip person detection."
         }
       }
     },
@@ -24,7 +28,9 @@
     "step": {
       "init": {
         "data": {
-          "preset_count": "Number of PTZ preset buttons (max. 8)"
+          "preset_count": "Number of PTZ preset buttons (max. 8)",
+          "alarm_folder": "Alarm folder",
+          "off_delay": "Keep detection on for (seconds)"
         }
       }
     }
@@ -59,6 +65,16 @@
     "button": {
       "preset": {
         "name": "Go to preset {number}"
+      }
+    },
+    "binary_sensor": {
+      "person_detected": {
+        "name": "Person detected"
+      }
+    },
+    "image": {
+      "last_detection": {
+        "name": "Last detection"
       }
     }
   }

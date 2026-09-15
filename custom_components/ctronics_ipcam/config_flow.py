@@ -1,4 +1,4 @@
-"""Config flow for the Ctronics IP Camera (Hi3510) integration."""
+"""Config flow for the Ctronics IP Camera integration."""
 from __future__ import annotations
 
 import logging
@@ -12,7 +12,10 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import CtronicsApiError, CtronicsAuthError, CtronicsClient
 from .const import (
+    CONF_ALARM_FOLDER,
+    CONF_OFF_DELAY,
     CONF_PRESET_COUNT,
+    DEFAULT_OFF_DELAY,
     DEFAULT_PORT,
     DEFAULT_PRESET_COUNT,
     DOMAIN,
@@ -27,6 +30,7 @@ STEP_USER_SCHEMA = vol.Schema(
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
         vol.Optional(CONF_PORT, default=DEFAULT_PORT): int,
+        vol.Optional(CONF_ALARM_FOLDER, default=""): str,
     }
 )
 
@@ -62,10 +66,20 @@ class CtronicsConfigFlow(ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected error validating Ctronics camera")
                 errors["base"] = "unknown"
             else:
+                alarm_folder = (user_input.get(CONF_ALARM_FOLDER) or "").strip()
+                data = {
+                    key: value
+                    for key, value in user_input.items()
+                    if key != CONF_ALARM_FOLDER
+                }
                 return self.async_create_entry(
                     title=f"Ctronics IPCAM ({user_input[CONF_HOST]})",
-                    data=user_input,
-                    options={CONF_PRESET_COUNT: DEFAULT_PRESET_COUNT},
+                    data=data,
+                    options={
+                        CONF_PRESET_COUNT: DEFAULT_PRESET_COUNT,
+                        CONF_ALARM_FOLDER: alarm_folder,
+                        CONF_OFF_DELAY: DEFAULT_OFF_DELAY,
+                    },
                 )
 
         return self.async_show_form(
@@ -79,23 +93,35 @@ class CtronicsConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class CtronicsOptionsFlow(OptionsFlow):
-    """Lets you change how many PTZ preset buttons get created."""
+    """Preset button count, alarm folder and how long detection stays on."""
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         self._config_entry = config_entry
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> Any:
         if user_input is not None:
+            user_input[CONF_ALARM_FOLDER] = (
+                user_input.get(CONF_ALARM_FOLDER) or ""
+            ).strip()
             return self.async_create_entry(data=user_input)
 
-        current = self._config_entry.options.get(CONF_PRESET_COUNT, DEFAULT_PRESET_COUNT)
+        options = self._config_entry.options
         schema = vol.Schema(
             {
                 # The camera stores at most 8 presets, so anything above that
                 # would only create buttons that can never work.
-                vol.Optional(CONF_PRESET_COUNT, default=current): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=MAX_PRESET_COUNT)
-                )
+                vol.Optional(
+                    CONF_PRESET_COUNT,
+                    default=options.get(CONF_PRESET_COUNT, DEFAULT_PRESET_COUNT),
+                ): vol.All(vol.Coerce(int), vol.Range(min=0, max=MAX_PRESET_COUNT)),
+                vol.Optional(
+                    CONF_ALARM_FOLDER,
+                    default=options.get(CONF_ALARM_FOLDER, ""),
+                ): str,
+                vol.Optional(
+                    CONF_OFF_DELAY,
+                    default=options.get(CONF_OFF_DELAY, DEFAULT_OFF_DELAY),
+                ): vol.All(vol.Coerce(int), vol.Range(min=5, max=600)),
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

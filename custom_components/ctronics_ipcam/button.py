@@ -9,13 +9,15 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_PRESET_COUNT, DEFAULT_PRESET_COUNT, DOMAIN, MAX_PRESET_COUNT
 from .coordinator import CtronicsCoordinator
+from .models import CtronicsRuntime
 from .entity import build_device_info
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    coordinator: CtronicsCoordinator = hass.data[DOMAIN][entry.entry_id]
+    runtime: CtronicsRuntime = hass.data[DOMAIN][entry.entry_id]
+    coordinator = runtime.coordinator
     host = entry.data[CONF_HOST]
     preset_count = min(
         entry.options.get(CONF_PRESET_COUNT, DEFAULT_PRESET_COUNT), MAX_PRESET_COUNT

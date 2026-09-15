@@ -7,7 +7,11 @@
           "host": "IP-Adresse",
           "username": "Benutzername",
           "password": "Passwort",
-          "port": "Port"
+          "port": "Port",
+          "alarm_folder": "Alarm-Ordner (optional)"
+        },
+        "data_description": {
+          "alarm_folder": "Ordner, in den diese Kamera ihre Alarmbilder per FTP lädt, z. B. /share/ctronics_flur. Leer lassen, wenn du die Personenerkennung nicht nutzen willst."
         }
       }
     },
@@ -24,7 +28,9 @@
     "step": {
       "init": {
         "data": {
-          "preset_count": "Anzahl PTZ-Preset-Buttons (max. 8)"
+          "preset_count": "Anzahl PTZ-Preset-Buttons (max. 8)",
+          "alarm_folder": "Alarm-Ordner",
+          "off_delay": "Erkennung bleibt aktiv für (Sekunden)"
         }
       }
     }
@@ -59,6 +65,16 @@
     "button": {
       "preset": {
         "name": "Preset {number} anfahren"
+      }
+    },
+    "binary_sensor": {
+      "person_detected": {
+        "name": "Person erkannt"
+      }
+    },
+    "image": {
+      "last_detection": {
+        "name": "Letzte Erkennung"
       }
     }
   }

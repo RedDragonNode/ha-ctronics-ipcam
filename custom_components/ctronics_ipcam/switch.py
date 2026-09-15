@@ -12,13 +12,15 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import CtronicsCoordinator
+from .models import CtronicsRuntime
 from .entity import build_device_info
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    coordinator: CtronicsCoordinator = hass.data[DOMAIN][entry.entry_id]
+    runtime: CtronicsRuntime = hass.data[DOMAIN][entry.entry_id]
+    coordinator = runtime.coordinator
     host = entry.data[CONF_HOST]
     async_add_entities(
         [
