@@ -7,24 +7,11 @@ datasheet. Where a value is inferred rather than directly observed, it says so.
 """
 from __future__ import annotations
 
-from datetime import timedelta
-
 DOMAIN = "ctronics_ipcam"
-PLATFORMS = [
-    "switch",
-    "number",
-    "button",
-    "select",
-    "binary_sensor",
-    "image",
-    "camera",
-]
+PLATFORMS = ["switch", "number", "button", "select", "camera"]
 
 # ── Config / options keys ───────────────────────────────────────────────
 CONF_PRESET_COUNT = "preset_count"
-CONF_ALARM_FOLDER = "alarm_folder"
-CONF_OFF_DELAY = "off_delay"
-CONF_ALARM_PREFIX = "alarm_prefix"
 CONF_SNAPSHOT_FOLDER = "snapshot_folder"
 
 DEFAULT_PORT = 80
@@ -33,29 +20,6 @@ DEFAULT_PRESET_COUNT = 4
 # hardware maximum — offering more would just create dead buttons.
 MAX_PRESET_COUNT = 8
 DEFAULT_SCAN_INTERVAL = 30  # seconds, for the CGI settings poll
-
-# ── Alarm folder watching ───────────────────────────────────────────────
-# The camera has no HTTP push and no pollable "person detected" flag. Its
-# only real-time signal is that it FTPs a snapshot when its AI detection
-# fires, so we watch the folder those snapshots land in.
-DEFAULT_OFF_DELAY = 30  # seconds the sensor stays on after the last snapshot
-
-# The camera doesn't upload into the configured folder directly — it creates
-# <folder>/<YYYY-MM-DD>/images/ underneath, so the folder is scanned
-# recursively.
-#
-# It also uploads two different kinds of file into the same place, told apart
-# by the first letter of the file name (confirmed from the FTP server log):
-#   A26091517455710.jpg  -> Alarm, i.e. a real detection
-#   P26091517410710.jpg  -> periodic "Auto-Schnappschuss", once a minute
-# Only names starting with this prefix count as a detection, and only those
-# are ever deleted — anything else in the folder is left alone. Set the
-# option to an empty string to treat every image as a detection.
-DEFAULT_ALARM_PREFIX = "A"
-FOLDER_POLL_INTERVAL = timedelta(seconds=2)
-IMAGE_SUFFIXES = (".jpg", ".jpeg", ".png")
-# Don't delete a file that may still be uploading.
-DELETE_GRACE_SECONDS = 5
 
 # ── CGI endpoints ────────────────────────────────────────────────────────
 # Confirmed: this firmware serves the Hi3510 CGI nested under /web/, unlike

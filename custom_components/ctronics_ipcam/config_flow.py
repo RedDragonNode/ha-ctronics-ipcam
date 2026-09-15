@@ -12,13 +12,8 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import CtronicsApiError, CtronicsAuthError, CtronicsClient
 from .const import (
-    CONF_ALARM_FOLDER,
-    CONF_ALARM_PREFIX,
-    CONF_OFF_DELAY,
-    CONF_SNAPSHOT_FOLDER,
-    DEFAULT_ALARM_PREFIX,
     CONF_PRESET_COUNT,
-    DEFAULT_OFF_DELAY,
+    CONF_SNAPSHOT_FOLDER,
     DEFAULT_PORT,
     DEFAULT_PRESET_COUNT,
     DEFAULT_SNAPSHOT_FOLDER,
@@ -34,7 +29,6 @@ STEP_USER_SCHEMA = vol.Schema(
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
         vol.Optional(CONF_PORT, default=DEFAULT_PORT): int,
-        vol.Optional(CONF_ALARM_FOLDER, default=""): str,
     }
 )
 
@@ -70,20 +64,11 @@ class CtronicsConfigFlow(ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected error validating Ctronics camera")
                 errors["base"] = "unknown"
             else:
-                alarm_folder = (user_input.get(CONF_ALARM_FOLDER) or "").strip()
-                data = {
-                    key: value
-                    for key, value in user_input.items()
-                    if key != CONF_ALARM_FOLDER
-                }
                 return self.async_create_entry(
                     title=f"Ctronics IPCAM ({user_input[CONF_HOST]})",
-                    data=data,
+                    data=user_input,
                     options={
                         CONF_PRESET_COUNT: DEFAULT_PRESET_COUNT,
-                        CONF_ALARM_FOLDER: alarm_folder,
-                        CONF_OFF_DELAY: DEFAULT_OFF_DELAY,
-                        CONF_ALARM_PREFIX: DEFAULT_ALARM_PREFIX,
                         CONF_SNAPSHOT_FOLDER: DEFAULT_SNAPSHOT_FOLDER,
                     },
                 )
@@ -99,16 +84,13 @@ class CtronicsConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class CtronicsOptionsFlow(OptionsFlow):
-    """Preset button count, alarm folder and how long detection stays on."""
+    """Preset button count and where snapshots are saved."""
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         self._config_entry = config_entry
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> Any:
         if user_input is not None:
-            user_input[CONF_ALARM_FOLDER] = (
-                user_input.get(CONF_ALARM_FOLDER) or ""
-            ).strip()
             user_input[CONF_SNAPSHOT_FOLDER] = (
                 user_input.get(CONF_SNAPSHOT_FOLDER) or DEFAULT_SNAPSHOT_FOLDER
             ).strip() or DEFAULT_SNAPSHOT_FOLDER
@@ -123,18 +105,6 @@ class CtronicsOptionsFlow(OptionsFlow):
                     CONF_PRESET_COUNT,
                     default=options.get(CONF_PRESET_COUNT, DEFAULT_PRESET_COUNT),
                 ): vol.All(vol.Coerce(int), vol.Range(min=0, max=MAX_PRESET_COUNT)),
-                vol.Optional(
-                    CONF_ALARM_FOLDER,
-                    default=options.get(CONF_ALARM_FOLDER, ""),
-                ): str,
-                vol.Optional(
-                    CONF_OFF_DELAY,
-                    default=options.get(CONF_OFF_DELAY, DEFAULT_OFF_DELAY),
-                ): vol.All(vol.Coerce(int), vol.Range(min=5, max=600)),
-                vol.Optional(
-                    CONF_ALARM_PREFIX,
-                    default=options.get(CONF_ALARM_PREFIX, DEFAULT_ALARM_PREFIX),
-                ): str,
                 vol.Optional(
                     CONF_SNAPSHOT_FOLDER,
                     default=options.get(

@@ -7,11 +7,7 @@
           "host": "IP-Adresse",
           "username": "Benutzername",
           "password": "Passwort",
-          "port": "Port",
-          "alarm_folder": "Alarm-Ordner (optional)"
-        },
-        "data_description": {
-          "alarm_folder": "Ordner, in den diese Kamera ihre Alarmbilder per FTP lädt, z. B. /share/ctronics_flur. Leer lassen, wenn du die Personenerkennung nicht nutzen willst."
+          "port": "Port"
         }
       }
     },
@@ -29,14 +25,9 @@
       "init": {
         "data": {
           "preset_count": "Anzahl PTZ-Preset-Buttons (max. 8)",
-          "alarm_folder": "Alarm-Ordner",
-          "off_delay": "Erkennung bleibt aktiv für (Sekunden)",
-          "alarm_prefix": "Dateiname-Anfang der Alarmbilder",
           "snapshot_folder": "Speicherort für Schnappschüsse"
         },
         "data_description": {
-          "alarm_folder": "Der Ordner, den du in der Kamera unter FTP → Pfad eingetragen hast. Unterordner, die die Kamera darin anlegt, werden automatisch mit durchsucht.",
-          "alarm_prefix": "Die Kamera lädt Alarmbilder (A...), Auto-Schnappschüsse (P...) und Testbilder (T...) in denselben Ordner. Nur Dateien mit diesem Anfangsbuchstaben gelten als Erkennung und werden aufgeräumt. Leer = alle Bilder.",
           "snapshot_folder": "Ordner, in den der Button „Schnappschuss speichern“ schreibt. Unterhalb von /media lassen sich die Bilder direkt im Medien-Bereich von Home Assistant ansehen und herunterladen."
         }
       }
@@ -80,16 +71,6 @@
     "camera": {
       "snapshot": {
         "name": "Schnappschuss"
-      }
-    },
-    "binary_sensor": {
-      "person_detected": {
-        "name": "Person erkannt"
-      }
-    },
-    "image": {
-      "last_detection": {
-        "name": "Letzte Erkennung"
       }
     }
   }

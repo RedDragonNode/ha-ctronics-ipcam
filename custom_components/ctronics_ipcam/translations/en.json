@@ -7,11 +7,7 @@
           "host": "IP address",
           "username": "Username",
           "password": "Password",
-          "port": "Port",
-          "alarm_folder": "Alarm folder (optional)"
-        },
-        "data_description": {
-          "alarm_folder": "Folder this camera uploads its alarm snapshots to over FTP, e.g. /share/ctronics_hallway. Leave empty to skip person detection."
+          "port": "Port"
         }
       }
     },
@@ -29,14 +25,9 @@
       "init": {
         "data": {
           "preset_count": "Number of PTZ preset buttons (max. 8)",
-          "alarm_folder": "Alarm folder",
-          "off_delay": "Keep detection on for (seconds)",
-          "alarm_prefix": "Alarm file name starts with",
           "snapshot_folder": "Snapshot save location"
         },
         "data_description": {
-          "alarm_folder": "The folder you set in the camera under FTP → path. Subfolders the camera creates inside it are searched automatically.",
-          "alarm_prefix": "The camera uploads alarm images (A...), periodic snapshots (P...) and test images (T...) to the same folder. Only files starting with this letter count as a detection and get cleaned up. Empty = every image.",
           "snapshot_folder": "Folder the \"Save snapshot\" button writes to. Anywhere under /media can be viewed and downloaded straight from Home Assistant's Media panel."
         }
       }
@@ -80,16 +71,6 @@
     "camera": {
       "snapshot": {
         "name": "Snapshot"
-      }
-    },
-    "binary_sensor": {
-      "person_detected": {
-        "name": "Person detected"
-      }
-    },
-    "image": {
-      "last_detection": {
-        "name": "Last detection"
       }
     }
   }
