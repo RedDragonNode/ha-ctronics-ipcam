@@ -29,7 +29,7 @@ feature set:
 | IR LED mode (auto/on/off) | ❌ | ✅ |
 | IRCut switching time | ❌ | ✅ |
 | PTZ preset buttons | partly | ✅ |
-| PTZ move / zoom / focus / scan | partly | ✅ |
+| PTZ move / scan | partly | ✅ |
 | Save and delete presets | ❌ | ✅ |
 | Full-resolution still snapshot | partly | ✅ |
 
@@ -47,7 +47,7 @@ own settings.
 | IRCut switching time | `number` (1–1024) | How long the IR-cut filter waits before switching |
 | Go to preset _n_ | `button` | Drives the camera to a stored PTZ preset |
 | Move up/down/left/right | `button` | Nudges the camera; see *PTZ* below |
-| Zoom in/out, Focus ± | `button` | Same nudge mechanism |
+| Zoom in/out, Focus ± | `button` | Only with a varifocal lens — off by default |
 | Centre position | `button` | Sends the camera home |
 | Scan left/right, up/down | `button` | Starts a patrol sweep — runs until stopped |
 | Stop | `button` | Halts any movement or sweep |
@@ -99,9 +99,16 @@ leave the camera panning forever.
 *Scan left/right* and *up/down* start a patrol sweep that keeps going — use
 *Stop* to end it.
 
-Focus + and − map to the camera's `focusin` / `focusout`. Note that the
-camera's own web interface has these two wired to the opposite buttons, so
-if the direction feels inverted on your firmware, that is why.
+**Zoom and focus are off by default.** The C6F0SpZ0N0PpL2 has a fixed lens:
+its firmware accepts `zoomin` / `zoomout` / `focusin` / `focusout` because
+the Hi3510 platform is shared across models, but nothing moves. The camera
+cannot be asked which kind of lens it has either — `getcapability` only
+reports `cap_cvbs`. If your model has a varifocal lens, switch on **Lens has
+zoom and focus** in the options to get the four buttons.
+
+Focus + and − map to `focusin` / `focusout`. The camera's own web interface
+has these two wired to the opposite buttons, so if the direction feels
+inverted, that is why.
 
 ### Presets
 

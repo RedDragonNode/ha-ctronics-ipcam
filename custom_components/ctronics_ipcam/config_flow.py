@@ -12,12 +12,14 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import CtronicsApiError, CtronicsAuthError, CtronicsClient
 from .const import (
+    CONF_HAS_ZOOM_FOCUS,
     CONF_PRESET_COUNT,
     CONF_PTZ_STEP_MS,
     CONF_RTSP_MAIN_PATH,
     CONF_RTSP_PORT,
     CONF_RTSP_SUB_PATH,
     CONF_SNAPSHOT_FOLDER,
+    DEFAULT_HAS_ZOOM_FOCUS,
     DEFAULT_PORT,
     DEFAULT_PRESET_COUNT,
     DEFAULT_PTZ_STEP_MS,
@@ -84,6 +86,7 @@ class CtronicsConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_RTSP_MAIN_PATH: DEFAULT_RTSP_MAIN_PATH,
                         CONF_RTSP_SUB_PATH: DEFAULT_RTSP_SUB_PATH,
                         CONF_PTZ_STEP_MS: DEFAULT_PTZ_STEP_MS,
+                        CONF_HAS_ZOOM_FOCUS: DEFAULT_HAS_ZOOM_FOCUS,
                     },
                 )
 
@@ -121,8 +124,9 @@ class CtronicsOptionsFlow(OptionsFlow):
         options = self._config_entry.options
         schema = vol.Schema(
             {
-                # The camera stores at most 8 presets, so anything above that
-                # would only create buttons that can never work.
+                # The camera stores up to 64 presets (tested on the device:
+                # 64 works, 65 does not), so anything above that would only
+                # create buttons that can never work.
                 vol.Optional(
                     CONF_PRESET_COUNT,
                     default=options.get(CONF_PRESET_COUNT, DEFAULT_PRESET_COUNT),
@@ -154,6 +158,12 @@ class CtronicsOptionsFlow(OptionsFlow):
                     vol.Coerce(int),
                     vol.Range(min=PTZ_STEP_MS_MIN, max=PTZ_STEP_MS_MAX),
                 ),
+                vol.Optional(
+                    CONF_HAS_ZOOM_FOCUS,
+                    default=options.get(
+                        CONF_HAS_ZOOM_FOCUS, DEFAULT_HAS_ZOOM_FOCUS
+                    ),
+                ): bool,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

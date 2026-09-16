@@ -17,6 +17,7 @@ CONF_RTSP_PORT = "rtsp_port"
 CONF_RTSP_MAIN_PATH = "rtsp_main_path"
 CONF_RTSP_SUB_PATH = "rtsp_sub_path"
 CONF_PTZ_STEP_MS = "ptz_step_ms"
+CONF_HAS_ZOOM_FOCUS = "has_zoom_focus"
 
 DEFAULT_PORT = 80
 DEFAULT_PRESET_COUNT = 4
@@ -88,9 +89,9 @@ IRCUT_MAX = 1024
 # mainpage9.html), so these are the exact commands the camera itself sends:
 #
 #   ptzctrl.cgi?-step=0&-act=<action>&-speed=<1-8>
-#   param.cgi?cmd=preset&-act=set &-status=1&-number=<0-7>   save
-#   param.cgi?cmd=preset&-act=goto&-status=1&-number=<0-7>   recall
-#   param.cgi?cmd=preset&-act=set &-status=0&-number=<0-7>   delete
+#   param.cgi?cmd=preset&-act=set &-status=1&-number=<0-63>  save
+#   param.cgi?cmd=preset&-act=goto&-status=1&-number=<0-63>  recall
+#   param.cgi?cmd=preset&-act=set &-status=0&-number=<0-63>  delete
 #
 # The UI fires the movement on mouse-down and "stop" on mouse-up. A button
 # press in Home Assistant has no "hold", so a step action sends the move,
@@ -105,6 +106,13 @@ PTZ_STEP_ACTIONS = (
     "focusin",
     "focusout",
 )
+# The C6F0SpZ0N0PpL2 has a fixed lens: no optical zoom, no focus motor. Its
+# firmware still accepts zoomin/zoomout/focusin/focusout because the Hi3510
+# platform is shared across models, but nothing moves. There is no way to
+# ask the camera either — getcapability only reports cap_cvbs. So the four
+# buttons are off by default and can be switched on for a model that does
+# have a varifocal lens.
+DEFAULT_HAS_ZOOM_FOCUS = False
 # These the camera's UI fires without a following stop: "home" re-centres,
 # the two scans keep running until something stops them.
 PTZ_INSTANT_ACTIONS = ("home", "hscan", "vscan", "stop")

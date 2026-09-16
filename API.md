@@ -21,6 +21,11 @@ Auth: HTTP Basic. Reads answer with `var key="value";` lines, writes with
 Movement runs while the action is active; the interface sends `stop` on
 mouse-up. `home`, `hscan` and `vscan` are sent without a following stop.
 
+`zoomin`, `zoomout`, `focusin` and `focusout` are accepted by the firmware
+on every model, but only do something on a camera with a varifocal lens. The
+C6F0SpZ0N0PpL2 has a fixed lens, so they are silently ignored there.
+`getcapability` does not report this — it only carries `cap_cvbs`.
+
 ## Presets
 
     param.cgi?cmd=preset&-act=set &-status=1&-number=<0-63>   save

@@ -14,9 +14,11 @@ from homeassistant.util import dt as dt_util, slugify
 
 from .api import CtronicsApiError
 from .const import (
+    CONF_HAS_ZOOM_FOCUS,
     CONF_PRESET_COUNT,
     CONF_PTZ_STEP_MS,
     CONF_SNAPSHOT_FOLDER,
+    DEFAULT_HAS_ZOOM_FOCUS,
     DEFAULT_PRESET_COUNT,
     DEFAULT_PTZ_STEP_MS,
     DEFAULT_SNAPSHOT_FOLDER,
@@ -55,16 +57,21 @@ async def async_setup_entry(
     )
 
     # Movement that runs for a moment and then stops on its own.
-    for key, action, icon in (
+    steps = [
         ("ptz_up", "up", "mdi:arrow-up-bold"),
         ("ptz_down", "down", "mdi:arrow-down-bold"),
         ("ptz_left", "left", "mdi:arrow-left-bold"),
         ("ptz_right", "right", "mdi:arrow-right-bold"),
-        ("ptz_zoom_in", "zoomin", "mdi:magnify-plus"),
-        ("ptz_zoom_out", "zoomout", "mdi:magnify-minus"),
-        ("ptz_focus_near", "focusin", "mdi:image-filter-center-focus"),
-        ("ptz_focus_far", "focusout", "mdi:image-filter-center-focus-strong"),
-    ):
+    ]
+    # Only for a model that actually has a varifocal lens — see const.py.
+    if entry.options.get(CONF_HAS_ZOOM_FOCUS, DEFAULT_HAS_ZOOM_FOCUS):
+        steps += [
+            ("ptz_zoom_in", "zoomin", "mdi:magnify-plus"),
+            ("ptz_zoom_out", "zoomout", "mdi:magnify-minus"),
+            ("ptz_focus_near", "focusin", "mdi:image-filter-center-focus"),
+            ("ptz_focus_far", "focusout", "mdi:image-filter-center-focus-strong"),
+        ]
+    for key, action, icon in steps:
         entities.append(
             CtronicsPtzStepButton(runtime, entry, host, key, action, icon, step_ms)
         )
@@ -91,7 +98,8 @@ class CtronicsPresetButton(ButtonEntity):
 
     Preset-Nummerierung folgt der Kamera: sie zählt intern ab 0, während die
     Weboberfläche "Voreinstellung 1", "2", ... anzeigt — Voreinstellung 1
-    entspricht also -number=0. Die Kamera kann maximal 8 Presets speichern.
+    entspricht also -number=0. Die Kamera speichert bis zu 64 Positionen (am
+    Gerät getestet: 64 geht, 65 nicht).
 
     Die Kamera bietet keinen Befehl, um abzufragen welche Presets belegt sind
     (nachgeprüft: getpresetattr / getpreset / getptzpresetattr existieren
