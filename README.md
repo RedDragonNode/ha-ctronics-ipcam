@@ -29,6 +29,8 @@ feature set:
 | IR LED mode (auto/on/off) | ❌ | ✅ |
 | IRCut switching time | ❌ | ✅ |
 | PTZ preset buttons | partly | ✅ |
+| PTZ move / zoom / focus / scan | partly | ✅ |
+| Save and delete presets | ❌ | ✅ |
 | Full-resolution still snapshot | partly | ✅ |
 
 Run both side by side: ONVIF for the picture, this one for the camera's
@@ -44,6 +46,14 @@ own settings.
 | IR LED control | `select` | `Auto` / `On` / `Off` for the infrared LEDs |
 | IRCut switching time | `number` (1–1024) | How long the IR-cut filter waits before switching |
 | Go to preset _n_ | `button` | Drives the camera to a stored PTZ preset |
+| Move up/down/left/right | `button` | Nudges the camera; see *PTZ* below |
+| Zoom in/out, Focus ± | `button` | Same nudge mechanism |
+| Centre position | `button` | Sends the camera home |
+| Scan left/right, up/down | `button` | Starts a patrol sweep — runs until stopped |
+| Stop | `button` | Halts any movement or sweep |
+| PTZ speed | `number` (1–8) | Speed used for every movement |
+| Preset number | `number` (1–64) | Which slot save/delete act on |
+| Save preset / Delete preset | `button` | Stores or clears that slot |
 | Main stream | `camera` | The camera's full-resolution RTSP stream |
 | Second stream | `camera` | The lower-resolution RTSP stream |
 | Snapshot | `camera` | Full-resolution still straight from the camera, no stream needed |
@@ -76,17 +86,40 @@ After setup, the entry's **Configure** dialog holds the rest: how many PTZ
 preset buttons to create (0–8), where the *Save snapshot* button writes to, and the RTSP port and stream
 paths.
 
+### PTZ
+
+The camera has no concept of "move one step". It starts moving when the
+button in its own interface goes down and stops when it comes back up. A
+Home Assistant button has no hold, so a direction press sends the movement,
+waits **PTZ step duration** (default 400 ms, in the options), then sends
+stop. Shorten it for finer aim, lengthen it to cover ground faster. The
+stop is sent even if the movement call fails, so a half-sent command cannot
+leave the camera panning forever.
+
+*Scan left/right* and *up/down* start a patrol sweep that keeps going — use
+*Stop* to end it.
+
+Focus + and − map to the camera's `focusin` / `focusout`. Note that the
+camera's own web interface has these two wired to the opposite buttons, so
+if the direction feels inverted on your firmware, that is why.
+
 ### Presets
 
-The camera stores up to **8** presets and offers no way to ask which of them
-are actually in use, so the integration cannot discover them — you pick the
-number of buttons yourself and rename them in Home Assistant.
+The camera stores up to **64** presets — tested on the device: 64 works, 65
+does not. It offers no way to ask which of them are in use, so the
+integration cannot discover them; you pick how many recall buttons to create
+in the options and rename them in Home Assistant. Saving and deleting reach
+all 64 regardless, through the **Preset number** entity.
 
-Save the positions on the camera first (its web interface, *Überwachen* tab:
-move the camera, pick a preset number, press *Senden*). Preset numbering in
-the camera's UI starts at 1; the API counts from 0, and this integration
-handles that mapping for you — "Go to preset 1" drives to the camera's
-preset 1.
+(The camera's own web interface shows a 1-8 dropdown, but that one belongs to
+the alarm feature — "drive to preset N on alarm" — which really is limited to
+8. The preset field itself has no limit in the page at all.)
+
+Positions can be stored from Home Assistant: aim the camera, set **Preset
+number** to the slot you want, then press **Save preset**. **Delete preset**
+clears that slot. Preset numbering in the camera's UI starts at 1 while the
+API counts from 0; the integration handles that mapping, so "Preset number 1"
+is the camera's preset 1.
 
 ### Streams
 
@@ -144,9 +177,8 @@ onto.
   same events. Use `binary_sensor.<camera>_cell_motion_detection` from ONVIF
   — note it pulses for about a second per event, so use it as an automation
   *trigger*, not as a condition.
-- PTZ direction control is not exposed yet: only `-act=stop` and `-act=up`
-  have been confirmed on the device, and the remaining values have not been
-  verified.
+- Video, OSD, audio, alarm and system settings are documented in
+  [`API.md`](API.md) but not exposed as entities yet.
 
 ## The camera's local API
 
@@ -172,8 +204,13 @@ HTTP Basic Auth with the camera's admin credentials. Reads answer with
 | IRCut time | `getircutattr` (unverified) | `setircutattr&-saradc_switch_value=<1-1024>` |
 | PTZ motor settings | `getmotorattr` | `setmotorattr&-tiltscan=&-tiltspeed=&-panscan=&-panspeed=&-movehome=&-ptzalarmmask=` |
 | Image settings | `getimageattr` | `setimageattr&-brightness=&-contrast=&-saturation=&-sharpness=&-mirror=&-flip=&…` |
-| Go to preset | — | `preset&-act=goto&-status=1&-number=<0-7>` |
-| PTZ move | — | `ptzctrl.cgi?-step=0&-act=<up\|stop\|…>&-speed=<n>` |
+| Go to preset | — | `preset&-act=goto&-status=1&-number=<0-63>` |
+| PTZ move | — | `ptzctrl.cgi?-step=0&-act=<action>&-speed=<1-8>` |
+| Save preset | — | `preset&-act=set&-status=1&-number=<0-63>` |
+| Delete preset | — | `preset&-act=set&-status=0&-number=<0-63>` |
+
+`-act` accepts `up`, `down`, `left`, `right`, `home`, `stop`, `zoomin`,
+`zoomout`, `focusin`, `focusout`, `hscan`, `vscan`.
 
 Outside the CGI, two plain HTTP still-image endpoints (both full 3840x2160):
 
@@ -194,6 +231,14 @@ Two things that cost real debugging time:
 
 Requests also carry `Cookie: cookmun=1` and a `Referer` header, mirroring
 what the camera's own interface sends.
+
+## Where this came from
+
+The commands were first reverse-engineered by capturing the camera's own web
+interface in a browser, then **verified against that interface's source code**,
+which the camera serves from `/web/`. [`API.md`](API.md) is the full
+inventory extracted from it: every read and write command of every settings
+page, with its parameters.
 
 ## Credits
 

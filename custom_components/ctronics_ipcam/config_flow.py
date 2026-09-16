@@ -13,18 +13,22 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import CtronicsApiError, CtronicsAuthError, CtronicsClient
 from .const import (
     CONF_PRESET_COUNT,
+    CONF_PTZ_STEP_MS,
     CONF_RTSP_MAIN_PATH,
     CONF_RTSP_PORT,
     CONF_RTSP_SUB_PATH,
     CONF_SNAPSHOT_FOLDER,
     DEFAULT_PORT,
     DEFAULT_PRESET_COUNT,
+    DEFAULT_PTZ_STEP_MS,
     DEFAULT_RTSP_MAIN_PATH,
     DEFAULT_RTSP_PORT,
     DEFAULT_RTSP_SUB_PATH,
     DEFAULT_SNAPSHOT_FOLDER,
     DOMAIN,
     MAX_PRESET_COUNT,
+    PTZ_STEP_MS_MAX,
+    PTZ_STEP_MS_MIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -79,6 +83,7 @@ class CtronicsConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_RTSP_PORT: DEFAULT_RTSP_PORT,
                         CONF_RTSP_MAIN_PATH: DEFAULT_RTSP_MAIN_PATH,
                         CONF_RTSP_SUB_PATH: DEFAULT_RTSP_SUB_PATH,
+                        CONF_PTZ_STEP_MS: DEFAULT_PTZ_STEP_MS,
                     },
                 )
 
@@ -142,6 +147,13 @@ class CtronicsOptionsFlow(OptionsFlow):
                     CONF_RTSP_SUB_PATH,
                     default=options.get(CONF_RTSP_SUB_PATH, DEFAULT_RTSP_SUB_PATH),
                 ): str,
+                vol.Optional(
+                    CONF_PTZ_STEP_MS,
+                    default=options.get(CONF_PTZ_STEP_MS, DEFAULT_PTZ_STEP_MS),
+                ): vol.All(
+                    vol.Coerce(int),
+                    vol.Range(min=PTZ_STEP_MS_MIN, max=PTZ_STEP_MS_MAX),
+                ),
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

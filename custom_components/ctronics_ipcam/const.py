@@ -16,12 +16,19 @@ CONF_SNAPSHOT_FOLDER = "snapshot_folder"
 CONF_RTSP_PORT = "rtsp_port"
 CONF_RTSP_MAIN_PATH = "rtsp_main_path"
 CONF_RTSP_SUB_PATH = "rtsp_sub_path"
+CONF_PTZ_STEP_MS = "ptz_step_ms"
 
 DEFAULT_PORT = 80
 DEFAULT_PRESET_COUNT = 4
-# The camera's "Voreinstellung" control is a dropdown 1-8, so 8 is the
-# hardware maximum — offering more would just create dead buttons.
-MAX_PRESET_COUNT = 8
+# 64, established by testing on the device: preset 64 works, 65 does not.
+#
+# An earlier version capped this at 8, taken from a dropdown in the camera's
+# web interface. That was wrong: the dropdown belongs to the alarm feature
+# ("drive to preset N on alarm"), which really does offer only 0-7. The
+# preset field itself is a free text input with maxlength="3" and no
+# validation anywhere in the page's JavaScript, and the firmware accepts up
+# to 64.
+MAX_PRESET_COUNT = 64
 DEFAULT_SCAN_INTERVAL = 30  # seconds, for the CGI settings poll
 
 # ── CGI endpoints ────────────────────────────────────────────────────────
@@ -75,3 +82,38 @@ IR_MODES = [IR_MODE_AUTO, IR_MODE_ON, IR_MODE_OFF]
 # field 1-1024 ("the larger the value, the longer the switching time").
 IRCUT_MIN = 1
 IRCUT_MAX = 1024
+
+# ── PTZ ─────────────────────────────────────────────────────────────────
+# Read straight out of the camera's own web UI source (js/js.js,
+# mainpage9.html), so these are the exact commands the camera itself sends:
+#
+#   ptzctrl.cgi?-step=0&-act=<action>&-speed=<1-8>
+#   param.cgi?cmd=preset&-act=set &-status=1&-number=<0-7>   save
+#   param.cgi?cmd=preset&-act=goto&-status=1&-number=<0-7>   recall
+#   param.cgi?cmd=preset&-act=set &-status=0&-number=<0-7>   delete
+#
+# The UI fires the movement on mouse-down and "stop" on mouse-up. A button
+# press in Home Assistant has no "hold", so a step action sends the move,
+# waits PTZ step duration, then stops.
+PTZ_STEP_ACTIONS = (
+    "up",
+    "down",
+    "left",
+    "right",
+    "zoomin",
+    "zoomout",
+    "focusin",
+    "focusout",
+)
+# These the camera's UI fires without a following stop: "home" re-centres,
+# the two scans keep running until something stops them.
+PTZ_INSTANT_ACTIONS = ("home", "hscan", "vscan", "stop")
+
+# The speed dropdown in the camera's UI offers exactly 1-8.
+PTZ_SPEED_MIN = 1
+PTZ_SPEED_MAX = 8
+DEFAULT_PTZ_SPEED = 4
+
+DEFAULT_PTZ_STEP_MS = 400
+PTZ_STEP_MS_MIN = 50
+PTZ_STEP_MS_MAX = 5000

@@ -15,8 +15,10 @@ from homeassistant.util import dt as dt_util, slugify
 from .api import CtronicsApiError
 from .const import (
     CONF_PRESET_COUNT,
+    CONF_PTZ_STEP_MS,
     CONF_SNAPSHOT_FOLDER,
     DEFAULT_PRESET_COUNT,
+    DEFAULT_PTZ_STEP_MS,
     DEFAULT_SNAPSHOT_FOLDER,
     DOMAIN,
     EVENT_SNAPSHOT_SAVED,
@@ -42,6 +44,8 @@ async def async_setup_entry(
         entry.options.get(CONF_SNAPSHOT_FOLDER) or DEFAULT_SNAPSHOT_FOLDER
     ).strip()
 
+    step_ms = entry.options.get(CONF_PTZ_STEP_MS, DEFAULT_PTZ_STEP_MS)
+
     entities: list[ButtonEntity] = [
         CtronicsPresetButton(coordinator, entry, host, number)
         for number in range(preset_count)
@@ -49,6 +53,36 @@ async def async_setup_entry(
     entities.append(
         CtronicsSaveSnapshotButton(coordinator, entry, host, snapshot_folder)
     )
+
+    # Movement that runs for a moment and then stops on its own.
+    for key, action, icon in (
+        ("ptz_up", "up", "mdi:arrow-up-bold"),
+        ("ptz_down", "down", "mdi:arrow-down-bold"),
+        ("ptz_left", "left", "mdi:arrow-left-bold"),
+        ("ptz_right", "right", "mdi:arrow-right-bold"),
+        ("ptz_zoom_in", "zoomin", "mdi:magnify-plus"),
+        ("ptz_zoom_out", "zoomout", "mdi:magnify-minus"),
+        ("ptz_focus_near", "focusin", "mdi:image-filter-center-focus"),
+        ("ptz_focus_far", "focusout", "mdi:image-filter-center-focus-strong"),
+    ):
+        entities.append(
+            CtronicsPtzStepButton(runtime, entry, host, key, action, icon, step_ms)
+        )
+
+    # Fire-and-forget: home re-centres, the scans run until stopped.
+    for key, action, icon in (
+        ("ptz_home", "home", "mdi:home-map-marker"),
+        ("ptz_scan_h", "hscan", "mdi:arrow-left-right"),
+        ("ptz_scan_v", "vscan", "mdi:arrow-up-down"),
+        ("ptz_stop", "stop", "mdi:stop-circle-outline"),
+    ):
+        entities.append(
+            CtronicsPtzActionButton(runtime, entry, host, key, action, icon)
+        )
+
+    entities.append(CtronicsPresetSaveButton(runtime, entry, host))
+    entities.append(CtronicsPresetDeleteButton(runtime, entry, host))
+
     async_add_entities(entities)
 
 
@@ -139,6 +173,107 @@ class CtronicsSaveSnapshotButton(ButtonEntity):
             EVENT_SNAPSHOT_SAVED,
             {"entry_id": self._entry_id, "path": path, "size": len(image)},
         )
+
+
+class CtronicsPtzButtonBase(ButtonEntity):
+    """Shared wiring for every PTZ button."""
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        runtime: CtronicsRuntime,
+        entry: ConfigEntry,
+        host: str,
+        key: str,
+        icon: str,
+    ) -> None:
+        self._runtime = runtime
+        self.entity_description = ButtonEntityDescription(
+            key=key, translation_key=key, icon=icon
+        )
+        self._attr_unique_id = f"{entry.entry_id}_{key}"
+        self._attr_device_info = build_device_info(entry, host)
+
+    @property
+    def _client(self):
+        return self._runtime.coordinator.client
+
+
+class CtronicsPtzStepButton(CtronicsPtzButtonBase):
+    """Nudge the camera in one direction, then stop.
+
+    The camera moves for as long as the mouse is held down in its own
+    interface. A Home Assistant button has no hold, so the step duration
+    from the options stands in for it.
+    """
+
+    def __init__(
+        self,
+        runtime: CtronicsRuntime,
+        entry: ConfigEntry,
+        host: str,
+        key: str,
+        action: str,
+        icon: str,
+        step_ms: int,
+    ) -> None:
+        super().__init__(runtime, entry, host, key, icon)
+        self._action = action
+        self._step_ms = step_ms
+
+    async def async_press(self) -> None:
+        await self._client.ptz_step(
+            self._action, self._runtime.ptz_speed, self._step_ms
+        )
+
+
+class CtronicsPtzActionButton(CtronicsPtzButtonBase):
+    """A PTZ command the camera's own interface sends without a stop."""
+
+    def __init__(
+        self,
+        runtime: CtronicsRuntime,
+        entry: ConfigEntry,
+        host: str,
+        key: str,
+        action: str,
+        icon: str,
+    ) -> None:
+        super().__init__(runtime, entry, host, key, icon)
+        self._action = action
+
+    async def async_press(self) -> None:
+        await self._client.ptz_command(self._action, self._runtime.ptz_speed)
+
+
+class CtronicsPresetSaveButton(CtronicsPtzButtonBase):
+    """Store the current position in the preset slot chosen by the number entity."""
+
+    def __init__(
+        self, runtime: CtronicsRuntime, entry: ConfigEntry, host: str
+    ) -> None:
+        super().__init__(runtime, entry, host, "preset_save", "mdi:content-save-cog")
+
+    async def async_press(self) -> None:
+        slot = self._runtime.preset_slot
+        _LOGGER.info("Saving current position as preset %d", slot)
+        # The camera counts from 0 while its interface shows 1-8.
+        await self._client.ptz_preset_save(slot - 1)
+
+
+class CtronicsPresetDeleteButton(CtronicsPtzButtonBase):
+    """Clear the preset in the chosen slot."""
+
+    def __init__(
+        self, runtime: CtronicsRuntime, entry: ConfigEntry, host: str
+    ) -> None:
+        super().__init__(runtime, entry, host, "preset_delete", "mdi:delete-forever")
+
+    async def async_press(self) -> None:
+        slot = self._runtime.preset_slot
+        _LOGGER.info("Deleting preset %d", slot)
+        await self._client.ptz_preset_delete(slot - 1)
 
 
 def _write_image(path: str, data: bytes) -> None:

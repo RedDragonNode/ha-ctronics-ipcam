@@ -1,14 +1,26 @@
-"""Number entities: AI-detection threshold and IRCut switching time."""
+"""Number entities: detection threshold, IRCut time, PTZ speed, preset slot."""
 from __future__ import annotations
 
-from homeassistant.components.number import NumberEntity, NumberEntityDescription, NumberMode
+from homeassistant.components.number import (
+    NumberEntity,
+    NumberEntityDescription,
+    NumberMode,
+    RestoreNumber,
+)
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST
+from homeassistant.const import CONF_HOST, EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, IRCUT_MAX, IRCUT_MIN
+from .const import (
+    DOMAIN,
+    IRCUT_MAX,
+    IRCUT_MIN,
+    MAX_PRESET_COUNT,
+    PTZ_SPEED_MAX,
+    PTZ_SPEED_MIN,
+)
 from .coordinator import CtronicsCoordinator
 from .models import CtronicsRuntime
 from .entity import build_device_info
@@ -24,6 +36,8 @@ async def async_setup_entry(
         [
             CtronicsThresholdNumber(coordinator, entry, host),
             CtronicsIrCutNumber(coordinator, entry, host),
+            CtronicsPtzSpeedNumber(runtime, entry, host),
+            CtronicsPresetSlotNumber(runtime, entry, host),
         ]
     )
 
@@ -98,3 +112,77 @@ class CtronicsIrCutNumber(CoordinatorEntity[CtronicsCoordinator], NumberEntity):
         self._local_value = int(value)
         await self.coordinator.client.set_ircut_switch_value(int(value))
         await self.coordinator.async_request_refresh()
+
+
+class CtronicsLocalNumber(RestoreNumber):
+    """A number the camera doesn't store — Home Assistant keeps it instead.
+
+    The camera's own interface treats PTZ speed and the preset slot as plain
+    form fields: they are read from the page, never from the device, and
+    there is no command to ask for them. So the value lives in the runtime
+    object and is restored from Home Assistant's own state on restart.
+    """
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_should_poll = False
+
+    def __init__(self, runtime: CtronicsRuntime, entry: ConfigEntry, host: str) -> None:
+        self._runtime = runtime
+        self._attr_unique_id = f"{entry.entry_id}_{self.entity_description.key}"
+        self._attr_device_info = build_device_info(entry, host)
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        last = await self.async_get_last_number_data()
+        if last is not None and last.native_value is not None:
+            self._apply(int(last.native_value))
+
+    def _apply(self, value: int) -> None:
+        raise NotImplementedError
+
+    async def async_set_native_value(self, value: float) -> None:
+        self._apply(int(value))
+        self.async_write_ha_state()
+
+
+class CtronicsPtzSpeedNumber(CtronicsLocalNumber):
+    """Speed 1-8 used for every PTZ movement (the camera's own range)."""
+
+    entity_description = NumberEntityDescription(
+        key="ptz_speed",
+        translation_key="ptz_speed",
+        icon="mdi:speedometer",
+        native_min_value=PTZ_SPEED_MIN,
+        native_max_value=PTZ_SPEED_MAX,
+        native_step=1,
+        mode=NumberMode.SLIDER,
+    )
+
+    @property
+    def native_value(self) -> float:
+        return float(self._runtime.ptz_speed)
+
+    def _apply(self, value: int) -> None:
+        self._runtime.ptz_speed = value
+
+
+class CtronicsPresetSlotNumber(CtronicsLocalNumber):
+    """Which preset the save/delete buttons act on — 1-8, as the camera counts."""
+
+    entity_description = NumberEntityDescription(
+        key="preset_slot",
+        translation_key="preset_slot",
+        icon="mdi:numeric",
+        native_min_value=1,
+        native_max_value=MAX_PRESET_COUNT,
+        native_step=1,
+        mode=NumberMode.BOX,
+    )
+
+    @property
+    def native_value(self) -> float:
+        return float(self._runtime.preset_slot)
+
+    def _apply(self, value: int) -> None:
+        self._runtime.preset_slot = value

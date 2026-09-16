@@ -16,6 +16,7 @@ the read commands were captured and adjust here.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from urllib.parse import quote
@@ -317,25 +318,73 @@ class CtronicsClient:
 
     # ── PTZ presets ──────────────────────────────────────────────────
 
-    async def ptz_stop(self) -> None:
-        """Stop any in-progress PTZ motion.
+    async def ptz_command(self, action: str, speed: int = 1) -> None:
+        """Send one raw PTZ action.
 
-        Confirmed live capture 2026-09-13: the camera's own web UI always
-        sends this immediately before a preset goto.
+        Verified against the camera's own web UI source (``js/js.js``)::
+
+            ptzctrl.cgi?-step=0&-act=<action>&-speed=<1-8>
+
+        Valid actions there: up, down, left, right, home, stop, zoomin,
+        zoomout, focusin, focusout, hscan, vscan.
         """
-        await self._get_raw(self._ptz_url, {"-step": "0", "-act": "stop", "-speed": "1"})
+        await self._get_raw(
+            self._ptz_url, {"-step": "0", "-act": action, "-speed": str(speed)}
+        )
+
+    async def ptz_stop(self) -> None:
+        """Stop any in-progress PTZ motion."""
+        await self.ptz_command("stop")
+
+    async def ptz_step(self, action: str, speed: int, duration_ms: int) -> None:
+        """Nudge the camera: start moving, wait, then stop.
+
+        The camera's UI moves on mouse-down and stops on mouse-up, so a
+        movement has no natural length of its own. A Home Assistant button
+        press has no "hold", so the duration stands in for how long the user
+        would have held the mouse down. The stop is sent even if the move
+        call fails, so a half-sent command can't leave the camera panning
+        forever.
+        """
+        try:
+            await self.ptz_command(action, speed)
+            await asyncio.sleep(duration_ms / 1000)
+        finally:
+            await self.ptz_stop()
 
     async def ptz_preset_goto(self, number: int) -> bool:
         """Move to a stored PTZ preset.
 
-        Confirmed live capture 2026-09-13:
+        Confirmed twice over: first from a live capture, later from the
+        camera's own source (``mainpage9.html``)::
+
             param.cgi?cmd=preset&-act=goto&-status=1&-number=<N>
+
         Every parameter carries a leading dash, ``-number`` included. Sending
         it as plain ``number`` makes the camera ignore it and fall back to its
         default position — which looks like "every preset goes to the same
-        spot". Camera numbering is zero-based: UI "Voreinstellung 1" is -number=0.
+        spot". Camera numbering is zero-based: the UI computes
+        ``form_preset.value - 1``, so "Voreinstellung 1" is -number=0.
         """
         await self.ptz_stop()
         return await self.execute_set(
             "preset", {"-act": "goto", "-status": "1", "-number": str(number)}
+        )
+
+    async def ptz_preset_save(self, number: int) -> bool:
+        """Store the current position as a preset.
+
+        From the camera's source: ``-act=set&-status=1``.
+        """
+        return await self.execute_set(
+            "preset", {"-act": "set", "-status": "1", "-number": str(number)}
+        )
+
+    async def ptz_preset_delete(self, number: int) -> bool:
+        """Clear a stored preset.
+
+        Same command as saving, with ``-status=0`` instead of 1.
+        """
+        return await self.execute_set(
+            "preset", {"-act": "set", "-status": "0", "-number": str(number)}
         )
