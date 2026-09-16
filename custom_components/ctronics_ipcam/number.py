@@ -1,4 +1,4 @@
-"""Number entities: detection threshold, IRCut time, PTZ speed, preset slot."""
+"""Number entities: detection threshold, IRCut time and the preset slot."""
 from __future__ import annotations
 
 from homeassistant.components.number import (
@@ -13,14 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import (
-    DOMAIN,
-    IRCUT_MAX,
-    IRCUT_MIN,
-    MAX_PRESET_COUNT,
-    PTZ_SPEED_MAX,
-    PTZ_SPEED_MIN,
-)
+from .const import DOMAIN, IRCUT_MAX, IRCUT_MIN, MAX_PRESET_COUNT
 from .coordinator import CtronicsCoordinator
 from .models import CtronicsRuntime
 from .entity import build_device_info
@@ -36,7 +29,6 @@ async def async_setup_entry(
         [
             CtronicsThresholdNumber(coordinator, entry, host),
             CtronicsIrCutNumber(coordinator, entry, host),
-            CtronicsPtzSpeedNumber(runtime, entry, host),
             CtronicsPresetSlotNumber(runtime, entry, host),
         ]
     )
@@ -117,10 +109,10 @@ class CtronicsIrCutNumber(CoordinatorEntity[CtronicsCoordinator], NumberEntity):
 class CtronicsLocalNumber(RestoreNumber):
     """A number the camera doesn't store — Home Assistant keeps it instead.
 
-    The camera's own interface treats PTZ speed and the preset slot as plain
-    form fields: they are read from the page, never from the device, and
-    there is no command to ask for them. So the value lives in the runtime
-    object and is restored from Home Assistant's own state on restart.
+    The camera's own interface treats the preset slot as a plain form field:
+    it is read from the page, never from the device, and there is no command
+    to ask for it. So the value lives in the runtime object and is restored
+    from Home Assistant's own state on restart.
     """
 
     _attr_has_entity_name = True
@@ -144,27 +136,6 @@ class CtronicsLocalNumber(RestoreNumber):
     async def async_set_native_value(self, value: float) -> None:
         self._apply(int(value))
         self.async_write_ha_state()
-
-
-class CtronicsPtzSpeedNumber(CtronicsLocalNumber):
-    """Speed 1-8 used for every PTZ movement (the camera's own range)."""
-
-    entity_description = NumberEntityDescription(
-        key="ptz_speed",
-        translation_key="ptz_speed",
-        icon="mdi:speedometer",
-        native_min_value=PTZ_SPEED_MIN,
-        native_max_value=PTZ_SPEED_MAX,
-        native_step=1,
-        mode=NumberMode.SLIDER,
-    )
-
-    @property
-    def native_value(self) -> float:
-        return float(self._runtime.ptz_speed)
-
-    def _apply(self, value: int) -> None:
-        self._runtime.ptz_speed = value
 
 
 class CtronicsPresetSlotNumber(CtronicsLocalNumber):

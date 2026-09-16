@@ -24,20 +24,16 @@
     "step": {
       "init": {
         "data": {
-          "preset_count": "Anzahl PTZ-Preset-Buttons (max. 64)",
           "snapshot_folder": "Speicherort für Schnappschüsse",
           "rtsp_port": "RTSP-Port",
           "rtsp_main_path": "RTSP-Pfad Hauptstream",
           "rtsp_sub_path": "RTSP-Pfad Zweitstream",
-          "ptz_step_ms": "PTZ-Schrittdauer (ms)",
-          "has_zoom_focus": "Objektiv mit Zoom und Fokus"
+          "ptz_step_ms": "PTZ-Schrittdauer (ms)"
         },
         "data_description": {
           "snapshot_folder": "Ordner, in den der Button „Schnappschuss speichern“ schreibt. Unterhalb von /media lassen sich die Bilder direkt im Medien-Bereich von Home Assistant ansehen und herunterladen.",
           "rtsp_main_path": "Nur ändern, wenn der Stream schwarz bleibt. Die Adresse lautet rtsp://<IP>:<Port>/<Pfad> — probier sie zum Prüfen in VLC aus.",
-          "ptz_step_ms": "Wie lange die Kamera pro Tastendruck fährt. Die Kamera kennt keine Schritte — sie fährt, solange man die Taste hält. Kleinere Werte = feinere Schritte.",
-          "preset_count": "Wie viele „Preset N anfahren“-Buttons angelegt werden. Die Kamera speichert bis zu 64 Positionen; du brauchst nur so viele Buttons wie Positionen, die du wirklich nutzt. Speichern und Löschen läuft ohnehin über „Preset-Nummer“ und geht bis 64.",
-          "has_zoom_focus": "Nur einschalten, wenn deine Kamera ein Varifokal-Objektiv hat. Modelle mit festem Objektiv — etwa die C6F0SpZ0N0PpL2 — nehmen die Zoom- und Fokusbefehle zwar an, es bewegt sich aber nichts. Fragen kann man die Kamera danach nicht."
+          "ptz_step_ms": "Wie lange die Kamera pro Tastendruck fährt. Die Kamera kennt keine Schritte — sie fährt, solange man die Taste hält. Kleinere Werte = feinere Schritte."
         }
       }
     }
@@ -58,9 +54,6 @@
       "ircut_value": {
         "name": "IRCut-Schaltzeit"
       },
-      "ptz_speed": {
-        "name": "PTZ-Geschwindigkeit"
-      },
       "preset_slot": {
         "name": "Preset-Nummer"
       }
@@ -72,6 +65,14 @@
           "auto": "Auto",
           "open": "Ein",
           "close": "Aus"
+        }
+      },
+      "ptz_speed_mode": {
+        "name": "PTZ-Geschwindigkeit",
+        "state": {
+          "fast": "Schnell",
+          "medium": "Mittel",
+          "slow": "Langsam"
         }
       }
     },
@@ -99,18 +100,6 @@
       },
       "ptz_stop": {
         "name": "Stopp"
-      },
-      "ptz_zoom_in": {
-        "name": "Vergrößern"
-      },
-      "ptz_zoom_out": {
-        "name": "Verkleinern"
-      },
-      "ptz_focus_near": {
-        "name": "Fokus +"
-      },
-      "ptz_focus_far": {
-        "name": "Fokus −"
       },
       "ptz_scan_h": {
         "name": "Schwenk links/rechts"

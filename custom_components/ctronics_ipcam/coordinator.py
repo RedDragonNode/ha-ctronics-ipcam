@@ -36,11 +36,24 @@ class CtronicsCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # a real connection/auth problem worth surfacing.
             raise UpdateFailed(f"Error talking to camera: {err}") from err
 
-        # These two degrade gracefully instead of taking the whole update down.
+        # These degrade gracefully instead of taking the whole update down.
         infrared_mode = await self.client.get_infrared_mode()
         ircut_value = await self.client.get_ircut_switch_value()
 
+        try:
+            motor = await self.client.get_motor_attr()
+        except CtronicsApiError as err:
+            _LOGGER.debug("getmotorattr failed: %s", err)
+            motor = {}
+
+        # One dropdown in the camera sets both axes, so either one tells us
+        # the current mode; panspeed is read first and tiltspeed is the
+        # fallback in case a firmware only fills one of them.
+        raw_speed = motor.get("panspeed") or motor.get("tiltspeed")
+        speed_index = int(raw_speed) if str(raw_speed).isdigit() else None
+
         return {
+            "ptz_speed_index": speed_index,
             "smd_enabled": smd_enabled,
             "smd_gthresh": int(smd_ex.get("smd_gthresh", 50) or 50),
             "smd_rect": smd_ex.get("smd_rect", "0"),

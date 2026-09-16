@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .const import DEFAULT_PTZ_SPEED
 from .coordinator import CtronicsCoordinator
 
 
@@ -13,11 +12,9 @@ class CtronicsRuntime:
 
     coordinator: CtronicsCoordinator
 
-    # The camera stores neither of these, and offers no command to read them
-    # back — in its own web interface they are just two form fields. So they
-    # live here, shared between the number entities that set them and the
-    # buttons that act on them, and are restored across restarts by the
-    # number entities themselves.
-    ptz_speed: int = DEFAULT_PTZ_SPEED
+    # The camera offers no command to read this back — in its own web
+    # interface it is just a form field. So it lives here, shared between the
+    # number entity that sets it and the buttons that act on it, and is
+    # restored across restarts by the number entity itself.
     # 1-based, exactly as the camera's "Voreinstellung" field shows it.
     preset_slot: int = 1

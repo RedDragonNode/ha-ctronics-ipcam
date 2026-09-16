@@ -26,6 +26,7 @@ import aiohttp
 from .const import (
     CGI_PARAM_PATH,
     CGI_PTZCTRL_PATH,
+    MOTOR_ATTR_FIELDS,
     SNAPSHOT_PATH_CACHED,
     SNAPSHOT_PATH_FRESH,
     SNAPSHOT_TIMEOUT,
@@ -249,6 +250,35 @@ class CtronicsClient:
         return await self.execute_set(
             "setircutattr", {"-saradc_switch_value": str(value)}
         )
+
+    # ── PTZ motor settings (Erweitert -> Terminal) ───────────────────
+
+    async def get_motor_attr(self) -> dict[str, str]:
+        """Read the stored PTZ motor settings.
+
+        Returns tiltscan, tiltspeed, panscan, panspeed, movehome and
+        ptzalarmmask.
+        """
+        return await self.execute("getmotorattr")
+
+    async def set_ptz_speed_index(self, index: int) -> bool:
+        """Set the stored PTZ speed: 0 fast, 1 medium, 2 slow.
+
+        ``setmotorattr`` takes its whole parameter set in one request — the
+        camera's own page always submits all six fields together. Sending
+        only the speed would leave the rest at whatever the firmware defaults
+        to, so the current values are read first and passed through unchanged.
+        One control sets both axes, exactly as terminal.js does.
+        """
+        current = await self.get_motor_attr()
+        params = {
+            f"-{field}": current.get(field, "")
+            for field in MOTOR_ATTR_FIELDS
+            if current.get(field) is not None
+        }
+        params["-panspeed"] = str(index)
+        params["-tiltspeed"] = str(index)
+        return await self.execute_set("setmotorattr", params)
 
     # ── RTSP ─────────────────────────────────────────────────────────
 

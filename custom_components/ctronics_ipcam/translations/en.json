@@ -24,20 +24,16 @@
     "step": {
       "init": {
         "data": {
-          "preset_count": "Number of PTZ preset buttons (max. 64)",
           "snapshot_folder": "Snapshot save location",
           "rtsp_port": "RTSP port",
           "rtsp_main_path": "RTSP path, main stream",
           "rtsp_sub_path": "RTSP path, second stream",
-          "ptz_step_ms": "PTZ step duration (ms)",
-          "has_zoom_focus": "Lens has zoom and focus"
+          "ptz_step_ms": "PTZ step duration (ms)"
         },
         "data_description": {
           "snapshot_folder": "Folder the \"Save snapshot\" button writes to. Anywhere under /media can be viewed and downloaded straight from Home Assistant's Media panel.",
           "rtsp_main_path": "Only change this if a stream stays black. The address is rtsp://<ip>:<port>/<path> — try it in VLC to check.",
-          "ptz_step_ms": "How long the camera moves per button press. The camera has no notion of steps — it moves while the button is held. Smaller values give finer steps.",
-          "preset_count": "How many \"Go to preset N\" buttons to create. The camera stores up to 64 positions; you only need buttons for the ones you actually use. Saving and deleting go through \"Preset number\" anyway, which reaches all 64.",
-          "has_zoom_focus": "Only switch this on if your camera has a varifocal lens. Fixed-lens models — the C6F0SpZ0N0PpL2 among them — accept the zoom and focus commands but nothing moves, and the camera cannot be asked which it is."
+          "ptz_step_ms": "How long the camera moves per button press. The camera has no notion of steps — it moves while the button is held. Smaller values give finer steps."
         }
       }
     }
@@ -58,9 +54,6 @@
       "ircut_value": {
         "name": "IRCut switching time"
       },
-      "ptz_speed": {
-        "name": "PTZ speed"
-      },
       "preset_slot": {
         "name": "Preset number"
       }
@@ -72,6 +65,14 @@
           "auto": "Auto",
           "open": "On",
           "close": "Off"
+        }
+      },
+      "ptz_speed_mode": {
+        "name": "PTZ speed",
+        "state": {
+          "fast": "Fast",
+          "medium": "Medium",
+          "slow": "Slow"
         }
       }
     },
@@ -99,18 +100,6 @@
       },
       "ptz_stop": {
         "name": "Stop"
-      },
-      "ptz_zoom_in": {
-        "name": "Zoom in"
-      },
-      "ptz_zoom_out": {
-        "name": "Zoom out"
-      },
-      "ptz_focus_near": {
-        "name": "Focus +"
-      },
-      "ptz_focus_far": {
-        "name": "Focus −"
       },
       "ptz_scan_h": {
         "name": "Scan left/right"

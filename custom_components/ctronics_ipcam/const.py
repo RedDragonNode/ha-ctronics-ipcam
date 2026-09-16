@@ -11,17 +11,17 @@ DOMAIN = "ctronics_ipcam"
 PLATFORMS = ["switch", "number", "button", "select", "camera"]
 
 # ── Config / options keys ───────────────────────────────────────────────
-CONF_PRESET_COUNT = "preset_count"
 CONF_SNAPSHOT_FOLDER = "snapshot_folder"
 CONF_RTSP_PORT = "rtsp_port"
 CONF_RTSP_MAIN_PATH = "rtsp_main_path"
 CONF_RTSP_SUB_PATH = "rtsp_sub_path"
 CONF_PTZ_STEP_MS = "ptz_step_ms"
-CONF_HAS_ZOOM_FOCUS = "has_zoom_focus"
 
 DEFAULT_PORT = 80
-DEFAULT_PRESET_COUNT = 4
 # 64, established by testing on the device: preset 64 works, 65 does not.
+# A button is created for every one of them, disabled by default — the camera
+# cannot report which slots hold a position, so the user enables the ones
+# they use in Home Assistant's entity settings.
 #
 # An earlier version capped this at 8, taken from a dropdown in the camera's
 # web interface. That was wrong: the dropdown belongs to the alarm feature
@@ -96,31 +96,50 @@ IRCUT_MAX = 1024
 # The UI fires the movement on mouse-down and "stop" on mouse-up. A button
 # press in Home Assistant has no "hold", so a step action sends the move,
 # waits PTZ step duration, then stops.
-PTZ_STEP_ACTIONS = (
-    "up",
-    "down",
-    "left",
-    "right",
-    "zoomin",
-    "zoomout",
-    "focusin",
-    "focusout",
-)
-# The C6F0SpZ0N0PpL2 has a fixed lens: no optical zoom, no focus motor. Its
-# firmware still accepts zoomin/zoomout/focusin/focusout because the Hi3510
-# platform is shared across models, but nothing moves. There is no way to
-# ask the camera either — getcapability only reports cap_cvbs. So the four
-# buttons are off by default and can be switched on for a model that does
-# have a varifocal lens.
-DEFAULT_HAS_ZOOM_FOCUS = False
+PTZ_STEP_ACTIONS = ("up", "down", "left", "right")
+# zoomin / zoomout / focusin / focusout exist in the firmware but are
+# deliberately not exposed: this camera has a fixed lens, so nothing moves.
+# getcapability cannot tell the two cases apart — it only reports cap_cvbs.
 # These the camera's UI fires without a following stop: "home" re-centres,
 # the two scans keep running until something stops them.
 PTZ_INSTANT_ACTIONS = ("home", "hscan", "vscan", "stop")
 
-# The speed dropdown in the camera's UI offers exactly 1-8.
-PTZ_SPEED_MIN = 1
-PTZ_SPEED_MAX = 8
-DEFAULT_PTZ_SPEED = 4
+# PTZ speed is a stored camera setting, not a per-command value. Its own
+# interface (Erweitert -> Terminal) offers three steps, and one dropdown sets
+# both axes at once (terminal.js: tiltspeed and panspeed both take
+# f.selectedIndex):
+#
+#   setmotorattr&-panspeed=<0|1|2>&-tiltspeed=<0|1|2>
+#
+# Read back with getmotorattr. setmotorattr expects its whole parameter set
+# in one request, so the other fields are read first and sent along unchanged.
+PTZ_SPEED_FAST = "fast"
+PTZ_SPEED_MEDIUM = "medium"
+PTZ_SPEED_SLOW = "slow"
+PTZ_SPEED_MODES = [PTZ_SPEED_FAST, PTZ_SPEED_MEDIUM, PTZ_SPEED_SLOW]
+# Index in the camera's dropdown -> our option name.
+PTZ_SPEED_BY_INDEX = {0: PTZ_SPEED_FAST, 1: PTZ_SPEED_MEDIUM, 2: PTZ_SPEED_SLOW}
+PTZ_SPEED_TO_INDEX = {v: k for k, v in PTZ_SPEED_BY_INDEX.items()}
+DEFAULT_PTZ_SPEED_MODE = PTZ_SPEED_MEDIUM
+
+# ptzctrl.cgi carries its own -speed (1-8) per movement, separate from the
+# stored setting above. Rather than a second speed control that could
+# contradict the first, the chosen mode picks the value used here.
+PTZ_SPEED_MODE_TO_STEP_SPEED = {
+    PTZ_SPEED_FAST: 8,
+    PTZ_SPEED_MEDIUM: 4,
+    PTZ_SPEED_SLOW: 1,
+}
+
+# Every field setmotorattr expects, so a partial write can't wipe the rest.
+MOTOR_ATTR_FIELDS = (
+    "tiltscan",
+    "tiltspeed",
+    "panscan",
+    "panspeed",
+    "movehome",
+    "ptzalarmmask",
+)
 
 DEFAULT_PTZ_STEP_MS = 400
 PTZ_STEP_MS_MIN = 50

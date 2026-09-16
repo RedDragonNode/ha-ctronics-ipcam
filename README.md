@@ -45,13 +45,12 @@ own settings.
 | Detection threshold | `number` (1–100) | Sensitivity of the AI detection |
 | IR LED control | `select` | `Auto` / `On` / `Off` for the infrared LEDs |
 | IRCut switching time | `number` (1–1024) | How long the IR-cut filter waits before switching |
-| Go to preset _n_ | `button` | Drives the camera to a stored PTZ preset |
+| Go to preset _n_ | `button` | One per slot, 1–64, **all disabled by default** |
 | Move up/down/left/right | `button` | Nudges the camera; see *PTZ* below |
-| Zoom in/out, Focus ± | `button` | Only with a varifocal lens — off by default |
 | Centre position | `button` | Sends the camera home |
 | Scan left/right, up/down | `button` | Starts a patrol sweep — runs until stopped |
 | Stop | `button` | Halts any movement or sweep |
-| PTZ speed | `number` (1–8) | Speed used for every movement |
+| PTZ speed | `select` | Fast / Medium / Slow — the camera's own stored setting |
 | Preset number | `number` (1–64) | Which slot save/delete act on |
 | Save preset / Delete preset | `button` | Stores or clears that slot |
 | Main stream | `camera` | The camera's full-resolution RTSP stream |
@@ -99,24 +98,29 @@ leave the camera panning forever.
 *Scan left/right* and *up/down* start a patrol sweep that keeps going — use
 *Stop* to end it.
 
-**Zoom and focus are off by default.** The C6F0SpZ0N0PpL2 has a fixed lens:
-its firmware accepts `zoomin` / `zoomout` / `focusin` / `focusout` because
-the Hi3510 platform is shared across models, but nothing moves. The camera
-cannot be asked which kind of lens it has either — `getcapability` only
-reports `cap_cvbs`. If your model has a varifocal lens, switch on **Lens has
-zoom and focus** in the options to get the four buttons.
+**Zoom and focus are not exposed.** The C6F0SpZ0N0PpL2 has a fixed lens: its
+firmware accepts `zoomin` / `zoomout` / `focusin` / `focusout` because the
+Hi3510 platform is shared across models, but nothing moves. `getcapability`
+cannot tell the two cases apart — it only reports `cap_cvbs` — so rather than
+ship four buttons that do nothing, they are left out. The commands are
+documented in [`API.md`](API.md) for anyone with a varifocal model.
 
-Focus + and − map to `focusin` / `focusout`. The camera's own web interface
-has these two wired to the opposite buttons, so if the direction feels
-inverted, that is why.
+**PTZ speed** is the camera's own stored setting, the dropdown its interface
+shows under *Erweitert → Terminal*: Fast, Medium, Slow. One control sets both
+axes, exactly as the camera does. It also picks the `-speed` value sent with
+each movement (fast 8, medium 4, slow 1), so there is one speed control
+rather than two that could disagree.
 
 ### Presets
 
 The camera stores up to **64** presets — tested on the device: 64 works, 65
-does not. It offers no way to ask which of them are in use, so the
-integration cannot discover them; you pick how many recall buttons to create
-in the options and rename them in Home Assistant. Saving and deleting reach
-all 64 regardless, through the **Preset number** entity.
+does not. It offers no way to ask which of them hold a position, so the
+integration cannot discover them.
+
+Instead, all 64 buttons are created and **every one starts disabled**. Enable
+the slots you actually use under *Settings → Devices & Services → Entities*,
+or from the device page. A disabled entity shows up nowhere and costs
+nothing, so the 60 you don't use stay out of your way.
 
 (The camera's own web interface shows a 1-8 dropdown, but that one belongs to
 the alarm feature — "drive to preset N on alarm" — which really is limited to
